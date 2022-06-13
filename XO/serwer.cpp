@@ -1,4 +1,3 @@
-
 // Server side C/C++ program to demonstrate Socket
 // programming
 #include <netinet/in.h>
@@ -7,9 +6,14 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include<list>
+#include<vector>
+#include<iostream>
+using namespace std;
 #define PORT 8080
 int main(int argc, char const* argv[])
 {
+    vector<int> wektor;
 	while(true){
 	
         int server_fd, new_socket, valread;
@@ -49,10 +53,15 @@ int main(int argc, char const* argv[])
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        valread = read(new_socket, buffer, 1024);
+        
+        
+        valread = read(new_socket, buffer, 1024); // zmienna odibiera char od wlochatego
+        
+        wektor.push_back(valread);
+        cout << wektor.size() << " \n";
         printf("%s\n", buffer);
         send(new_socket, hello, strlen(hello), 0);
-        printf("Hello message sent\n");
+        printf("Madry Hello message sent\n");
     
     // closing the connected socket
         close(new_socket);
