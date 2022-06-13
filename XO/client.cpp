@@ -9,15 +9,33 @@
 #define PORT 8080
 using namespace std;
 
+void show(char* XO) {
 
+	for (int i = 0; i < 9; i++) {
+		if (i % 3 == 0) cout << "\n\n";//<< "------"<<endl;
+		cout << i << "\t";
+	}
+	cout << "\n\n";
+
+	for (int i = 0; i < 9; i++) {
+		if (i % 3 == 0) cout << "\n\n";//<< "------"<<endl;
+		cout << (char)XO[i] << "\t";
+	}
+}
+void show_z(){
+		for (int i = 0; i < 9; i++) {
+		if (i % 3 == 0) cout << "\n\n";//<< "------"<<endl;
+		cout << '0' << "\t";
+	}
+}
 
 int first_connection(){
 
 		//return 10;
 	//out << endl << endl;
-	
 	// logika Client - server
 	bool flag_f = true;
+	int first_animation = 0 ; 
 	while(flag_f){
 		int sock = 0, valread, client_fd;
 		struct sockaddr_in serv_addr;
@@ -44,6 +62,8 @@ int first_connection(){
 		}
 		bool flag = true;
 		while(flag){ // moj while
+
+			
 			//send(sock, hello, strlen(hello), 0);
 			//printf("Hello message from client sent to server\n");
 			//valread = read(sock, buffer, 2024);
@@ -57,8 +77,14 @@ int first_connection(){
 			cout <<" wsyweitlam char " << y << "\n";
 			flag = false; 
 			flag_f=false;
+			
 			send(sock, &b, strlen(y), 0);
 			valread = read(sock,buffer, 2024);
+			show(buffer);
+			//if(first_animation==0){
+			//	first_animation++;
+			//	show_z();
+			//}
 			break;
 		}
 	// closing the connected socket
