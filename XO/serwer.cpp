@@ -206,7 +206,7 @@ int main(int argc, char const* argv[])
 	vector<char>wektor_buffer;
 	char player = 'X'; 
 	bool game = true;
-	
+
 	while(game){
 	
 		if(check(&XO[0])){
@@ -255,8 +255,7 @@ int main(int argc, char const* argv[])
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        
-        
+        send(new_socket, XO, strlen(hello), 0);
         valread = read(new_socket, buffer, 1024); // zmienna odibiera char od wlochatego
         send(new_socket, XO, strlen(hello), 0);
         
