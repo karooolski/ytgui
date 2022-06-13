@@ -40,51 +40,47 @@ int first_connection(){
 		int sock = 0, valread, client_fd;
 		struct sockaddr_in serv_addr;
 		char* hello = "Gracz: dzien dobry";
-		char buffer[1024] = { 0 };
+		char plansza[1024] = { 0 }; // wczesniej jako buffer
+		char kim_jestem[1] = { 'i' };
+//<zabezpieczenia>-------------------------------------------------------------------------------
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			printf("\n Socket creation error \n");
 			return -1;
 		}
-
 		serv_addr.sin_family = AF_INET;
 		serv_addr.sin_port = htons(PORT);
-
-		// Convert IPv4 and IPv6 addresses from text to binary
-		// form
+		// Convert IPv4 and IPv6 addresses from text to binary // form
 		if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) { //10.3.10.182
 			printf("\nInvalid address/ Address not supported \n");
 			return -1;
 		}
-
 		if ((client_fd = connect(sock, (struct sockaddr*)&serv_addr,sizeof(serv_addr))) < 0) {
 			printf("\nConnection Failed \n");
 			return -1;
 		}
+//</zabezpieczenia>------------------------------------------------------------------------------		
 		bool flag = true;
 		while(flag){ // moj while
-			valread = read(sock,buffer, 2024);
-			show(buffer);
+			valread = read(sock,plansza, 1024); // zanim gracz odda ruch pierw zobaczy plansze
+			kim_jestem[0] = plansza[9];
+			//send(sock, &kim_jestem, strlen(&kim_jestem[0]), 0); // wysylam do serwera aktualny ruch
+			//valread = read(sock,kim_jestem,1024); // oraz zobaczy czy napewno jest x czy y
+			show(plansza); // == printf("%s\n", plansza);
 			//send(sock, hello, strlen(hello), 0);
 			//printf("Hello message from client sent to server\n");
-			//valread = read(sock, buffer, 2024);
-			printf("%s\n", buffer);
+			//valread = read(sock, plansza, 2024);
+			
 			//int a;
 			//cin>>a;
 			//char b = a + '0';
-			char b;
-			cin >> b;
-			char *y = &b;
-			cout <<" wsyweitlam char " << y << "\n";
+			char moj_ruch;
+			cout <<"\n "<<kim_jestem<<" ";
+			cin >> moj_ruch;
+			cout <<" wsyweitlam char " << moj_ruch << "\n";
 			flag = false; 
 			flag_f=false;
-			
-			send(sock, &b, strlen(y), 0);
-			//valread = read(sock,buffer, 2024);
-			//show(buffer);
-			//if(first_animation==0){
-			//	first_animation++;
-			//	show_z();
-			//}
+			send(sock, &moj_ruch, strlen(&moj_ruch), 0); // wysylam do serwera aktualny ruch
+			valread = read(sock,plansza, 1024);
 			break;
 		}
 	// closing the connected socket
