@@ -224,7 +224,7 @@ int main(int argc, char const* argv[])
         int addrlen = sizeof(address);
         char buffer[1024] = { 1,2,3 };
 		
-		char hellos [] = {'W','I','T','A','J',' ','W',' ','G','R','Z','E','\n'};
+		char hellos [] = {' ','W','I','T','A','J',' ','W',' ','G','R','Z','E','\n'};
         //char* hello = "Witaj\rw\rgrze!\n";
     	char* hello = &hellos[0];
 //<zabezpieczenia>-------------------------------------------------------------------------------		
@@ -287,10 +287,10 @@ int main(int argc, char const* argv[])
         
 		
         printf("Madry Hello message sent\n");
-	printf("----------------------------\n");
-    // closing the connected socket
+		printf("----------------------------\n");
+    	// closing the connected socket
         close(new_socket);
-    // closing the listening socket
+    	// closing the listening socket
         shutdown(server_fd, SHUT_RDWR);
     }
     return 0;
