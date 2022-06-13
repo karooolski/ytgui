@@ -163,8 +163,7 @@ void game() {
 	show(&XO[0]);
 
 	char player;
-	player = 'X';
-
+	player = 'X'; 
 	cout << endl;
 
 	// logika gry
@@ -195,7 +194,7 @@ void game() {
 
 int main(int argc, char const* argv[])
 {
-	char XO[9];
+	char XO[10];
 	for (int i = 0; i < 9; i++)
 		XO[i] = '0';
 	XO[0] = '0'; XO[1] = '0'; XO[2] = '0';
@@ -205,6 +204,7 @@ int main(int argc, char const* argv[])
     vector<int> wektor;
 	vector<char>wektor_buffer;
 	char player = 'X'; 
+	XO[9]=player;
 	bool game = true;
 
 	while(game){
@@ -227,6 +227,7 @@ int main(int argc, char const* argv[])
 		char hellos [] = {'W','I','T','A','J',' ','W',' ','G','R','Z','E','\n'};
         //char* hello = "Witaj\rw\rgrze!\n";
     	char* hello = &hellos[0];
+//<zabezpieczenia>-------------------------------------------------------------------------------		
         // Creating socket file descriptor
         if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
             perror("socket failed");
@@ -255,9 +256,11 @@ int main(int argc, char const* argv[])
             perror("accept");
             exit(EXIT_FAILURE);
         }
-        send(new_socket, XO, strlen(hello), 0);
-        valread = read(new_socket, buffer, 1024); // zmienna odibiera char od wlochatego
-        send(new_socket, XO, strlen(hello), 0);
+//</zabezpieczenia>-------------------------------------------------------------------------------		
+        send(new_socket, XO, strlen(XO), 0); // pierw wysylam do klienta aktualna plansze
+		//send(new_socket,&player,strlen(&player),0); // wysylam do klienta kim jest 
+        valread = read(new_socket, buffer, 1024); // odbieram ruch klienta
+        send(new_socket, XO, strlen(hello), 0); // wysylam znowu klientowi akttualna plansze
         
 		cout <<"aktualne dane\n" ;
 		cout << " wektor: size: "<<wektor.size() << " \n";
@@ -269,7 +272,7 @@ int main(int argc, char const* argv[])
 		cout <<"pole "<<pole <<"\n";
 		XO[pole] = player;
 		player = switcher(player);
-
+		XO[9] = player; 
 		for(vector<char>::iterator it = wektor_buffer.begin(); it != wektor_buffer.end();it++){
 			cout << *it << " " ;
 		} 
