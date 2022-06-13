@@ -195,10 +195,29 @@ void game() {
 
 int main(int argc, char const* argv[])
 {
+	char XO[9];
+	for (int i = 0; i < 9; i++)
+		XO[i] = '0';
+	XO[0] = '0'; XO[1] = '0'; XO[2] = '0';
+	XO[3] = '0'; XO[4] = '0'; XO[5] = '0';
+	XO[6] = '0'; XO[7] = '0'; XO[8] = '0';
+
     vector<int> wektor;
 	vector<char>wektor_buffer;
-	while(true){
+	char player = 'X'; 
+	bool game = true;
 	
+	while(game){
+	
+		if(check(&XO[0])){
+			cout << "\n Zakonczono gre \n";
+			game = false;
+			break;
+		}
+
+		show(&XO[0]);
+		cout <<"\n";
+
         int server_fd, new_socket, valread;
         struct sockaddr_in address;
         int opt = 1;
@@ -213,7 +232,6 @@ int main(int argc, char const* argv[])
             perror("socket failed");
             exit(EXIT_FAILURE);
         }
-    
         // Forcefully attaching socket to the port 8080
         if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,sizeof(opt))) {
             perror("setsockopt");
@@ -222,7 +240,6 @@ int main(int argc, char const* argv[])
         address.sin_family = AF_INET;
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons(PORT);
-    
         // Forcefully attaching socket to the port 8080
         if (bind(server_fd, (struct sockaddr*)&address,
                 sizeof(address))< 0) {
@@ -241,7 +258,7 @@ int main(int argc, char const* argv[])
         
         
         valread = read(new_socket, buffer, 1024); // zmienna odibiera char od wlochatego
-        send(new_socket, hello, strlen(hello), 0);
+        send(new_socket, XO, strlen(hello), 0);
         
 		cout <<"aktualne dane\n" ;
 		cout << " wektor: size: "<<wektor.size() << " \n";
@@ -249,6 +266,10 @@ int main(int argc, char const* argv[])
 
 		wektor.push_back(valread);
 		wektor_buffer.push_back(buffer[0]);
+		int pole = (int)(buffer[0])-'0';
+		cout <<"pole "<<pole <<"\n";
+		XO[pole] = player;
+		player = switcher(player);
 
 		for(vector<char>::iterator it = wektor_buffer.begin(); it != wektor_buffer.end();it++){
 			cout << *it << " " ;
