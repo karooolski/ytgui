@@ -62,8 +62,8 @@ int first_connection(){
 		}
 		bool flag = true;
 		while(flag){ // moj while
-
-			
+			valread = read(sock,buffer, 2024);
+			show(buffer);
 			//send(sock, hello, strlen(hello), 0);
 			//printf("Hello message from client sent to server\n");
 			//valread = read(sock, buffer, 2024);
@@ -79,8 +79,8 @@ int first_connection(){
 			flag_f=false;
 			
 			send(sock, &b, strlen(y), 0);
-			valread = read(sock,buffer, 2024);
-			show(buffer);
+			//valread = read(sock,buffer, 2024);
+			//show(buffer);
 			//if(first_animation==0){
 			//	first_animation++;
 			//	show_z();
