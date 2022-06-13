@@ -111,7 +111,7 @@ bool check(char *XO){
 char switcher(char player){
 	if(player=='X') return 'Y';
 	if(player=='Y') return 'X';
-	else {cout << "\n switcher: blad!\n"; return 'S' }
+	else {cout << "\n switcher: blad!\n"; return 'S'; }
 }
 
 // sprawdzenie poprawnosci danych dla pojedynczych przypadkow
@@ -144,9 +144,8 @@ void check_test(){
 	check(&XO[0]);
 }
 
-int main(int argc, char const* argv[])
-{
-	
+
+void game(){
 	//check_test();
 	//return 0;
 	
@@ -186,14 +185,18 @@ int main(int argc, char const* argv[])
 		}
 	}
 
-	return 10;
-	cout << endl << endl;
+}
+
+int first_connection(){
+
+		//return 10;
+	//out << endl << endl;
 	
 	// logika Client - server
 	while(true){
 		int sock = 0, valread, client_fd;
 		struct sockaddr_in serv_addr;
-		char* hello = "Hello from client";
+		char* hello = "Hello from client Madry";
 		char buffer[1024] = { 0 };
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			printf("\n Socket creation error \n");
@@ -205,7 +208,7 @@ int main(int argc, char const* argv[])
 
 		// Convert IPv4 and IPv6 addresses from text to binary
 		// form
-		if (inet_pton(AF_INET, "10.3.10.180", &serv_addr.sin_addr) <= 0) {
+		if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) { //10.3.10.182
 			printf("\nInvalid address/ Address not supported \n");
 			return -1;
 		}
@@ -231,8 +234,16 @@ int main(int argc, char const* argv[])
 	// closing the connected socket
 	close(client_fd);
 	}
+
+}
+
+
+int main(int argc, char const* argv[])
+{
+	
+	first_connection();
+
 	cout << "wylaczenie:";
 	int notend; cin >> notend;
 	return 0;
 }
-
