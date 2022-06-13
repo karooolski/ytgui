@@ -29,14 +29,14 @@ void show_z(){
 	}
 }
 
-int first_connection(){
+int connection(){ // logika Client <-> server
 
 		//return 10;
-	//out << endl << endl;
-	// logika Client - server
-	bool flag_f = true;
-	int first_animation = 0 ; 
-	while(flag_f){
+		//out << endl << endl;
+	
+	 bool flag_f = true;
+	 int first_animation = 0 ; 
+	 while(flag_f){
 		int sock = 0, valread, client_fd;
 		struct sockaddr_in serv_addr;
 		char* hello = "Gracz: dzien dobry";
@@ -65,6 +65,7 @@ int first_connection(){
 			kim_jestem[0] = plansza[9];
 			//send(sock, &kim_jestem, strlen(&kim_jestem[0]), 0); // wysylam do serwera aktualny ruch
 			//valread = read(sock,kim_jestem,1024); // oraz zobaczy czy napewno jest x czy y
+			system("clear");
 			show(plansza); // == printf("%s\n", plansza);
 			//send(sock, hello, strlen(hello), 0);
 			//printf("Hello message from client sent to server\n");
@@ -81,10 +82,10 @@ int first_connection(){
 			flag_f=false;
 			send(sock, &moj_ruch, strlen(&moj_ruch), 0); // wysylam do serwera aktualny ruch
 			valread = read(sock,plansza, 1024);
+			
 			break;
 		}
-	// closing the connected socket
-	close(client_fd);
+	close(client_fd); // closing the connected socket
 	}
 
 }
@@ -93,7 +94,7 @@ int first_connection(){
 int main(int argc, char const* argv[])
 {
 	
-	first_connection();
+	connection();
 
 	cout << "wylaczenie:";
 	int notend; cin >> notend;
