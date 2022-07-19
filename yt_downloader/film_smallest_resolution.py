@@ -1,36 +1,16 @@
 # importing the module 
 from pytube import YouTube 
   
-# where to save 
-SAVE_PATH = "/home/karol/Pulpit/yt" #to_do 
-  
-# link of the video to be downloaded 
+SAVE_PATH = "/home/karol/Pulpit/yt" # where to save 
+
 link="https://www.youtube.com/watch?v=yXMob8_ygGo"
   
 try: 
-    # object creation using YouTube
-    # which was imported in the beginning 
     yt = YouTube(link) 
 except: 
     print("Connection Error") #to handle exception 
-  
-# filters out all the files with "mp4" extension 
-# mp4files = yt.filter('mp4') 
-  
-#to set the name of the file
-# yt.set_filename('GeeksforGeeks Video')  
-# get the video with the extension and
-# resolution passed in the get() function 
-# d_video = yt.get(mp4files[-1].extension,mp4files[-1].resolution) 
 try: 
-    # downloading the video 
-    #d_video.download(SAVE_PATH) 
     stream = yt.streams.first()
-    #stream.resolution = yt.streams.get_highest_resolution()
-    
-    #mp4filter=yt.streams.filter('mp4')
-    #stream.codecs(mp4filter)
-    ##stream.codecs.insert(".mp4")
     stream.download(SAVE_PATH)
 except: 
     print("Some Error!") 
