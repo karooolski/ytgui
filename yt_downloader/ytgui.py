@@ -1,4 +1,4 @@
-import tkinter as tk # 20.07.2022
+import tkinter
 from pytube import YouTube 
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
@@ -14,39 +14,30 @@ def change_backslashes(word):
     return(s)
 
 # Top level window
-frame = tk.Tk()
+frame = tkinter.Tk()
 frame.title("TextBox Input")
 frame.geometry('500x300')
-
-#global path_confirm
-#path_confirm = 0
 
 global SAVE_PATH
 SAVE_PATH = ""
 global link 
 link = ""
 
-def printInput():
-   
-   #global path_confirm
-    
-    inp = inputtxt.get(1.0, "end-1c")
+def buttonActionConfirmThePath():
+    input = textBoxPath.get(1.0, "end-1c")
     global SAVE_PATH
-    SAVE_PATH = inp
+    SAVE_PATH = input
     SAVE_PATH = change_backslashes(SAVE_PATH)
-    l = lbl.config(text = "Provided Input: "+inp)
-    print(inp)
+    labelPath.config(text = "Provided Input: "+input)
+    print(input)
     
-    
-def printInput2():
-    # print(path_confirm)
-   # if path_confirm == 1 : 
-    inpp = input2txt.get(1.0, "end-1c")
+def buttonActionDownload():
+    input = textBoxDownload.get(1.0, "end-1c")
     global SAVE_PATH
     global link 
-    link = inpp
-    p = lbll.config(text = "Provided Input: "+inpp)  
-    print(inpp)
+    link = input
+    label_download.config(text = "Provided Input: "+input)  
+    print(input)
     print("Try download a video")
     print("link: "+link)
     print("SAVE_PATH: "+SAVE_PATH)
@@ -54,32 +45,29 @@ def printInput2():
     try: 
         yt = YouTube(link) 
     except: 
-        print("Connection Error") #to handle exception 
+        print("YouTube(link) error: Connection Failed") #to handle exception 
     try: 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
     except: 
-        print("Some Error!") 
-    print('Task Completed!') 
-    #else: 
-    #p = lbll.config(text="Nie wprowadzono sciezki")
-    #print("nie wprowadzono sciezki")
+        print("yt.streams.filter error!\n Do you set the PATH correctly?") 
+    print('Finished working!') 
   
 # TextBox Creation
-inputtxt = tk.Text(frame,height = 5,width = 20)
-inputtxt.pack()
+textBoxPath = tkinter.Text(frame,height = 5,width = 20)
+textBoxPath.pack()
 # Button Creation
-printButton = tk.Button(frame,text = "sciezka_zatwierdz", command = printInput)
+printButton = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
 printButton.pack()
 # Label Creation
-lbl = tk.Label(frame, text = "")
-lbl.pack()
+labelPath = tkinter.Label(frame, text = "")
+labelPath.pack()
 
-input2txt = tk.Text(frame,height = 5,width = 20)  
-input2txt.pack()
-print2Button = tk.Button(frame,text = "link_zatwierdz", command = printInput2)
-print2Button.pack()
-lbll = tk.Label(frame,text="")
-lbll.pack()
+textBoxDownload = tkinter.Text(frame,height = 5,width = 20)  
+textBoxDownload.pack()
+printButton2 = tkinter.Button(frame,text = "confirm link and download", command = buttonActionDownload)
+printButton2.pack()
+label_download = tkinter.Label(frame,text="")
+label_download.pack()
 
 
 
