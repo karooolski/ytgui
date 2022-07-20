@@ -1,0 +1,76 @@
+import tkinter as tk
+from pytube import YouTube 
+#https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
+  
+# Top level window
+frame = tk.Tk()
+frame.title("TextBox Input")
+frame.geometry('500x300')
+
+#global path_confirm
+#path_confirm = 0
+
+global SAVE_PATH
+global link
+
+def printInput():
+   
+   #global path_confirm
+    
+    inp = inputtxt.get(1.0, "end-1c")
+    global SAVE_PATH
+    SAVE_PATH = inp
+    l = lbl.config(text = "Provided Input: "+inp)
+    print(inp)
+    
+    
+def printInput2():
+    # print(path_confirm)
+   # if path_confirm == 1 : 
+    inpp = input2txt.get(1.0, "end-1c")
+    global SAVE_PATH
+    global link 
+    link = inpp
+    p = lbll.config(text = "Provided Input: "+inpp)  
+    print(inpp)
+    print("Try download a video")
+    print("link: "+link)
+    print("SAVE_PATH: "+SAVE_PATH)
+
+    try: 
+        yt = YouTube(link) 
+    except: 
+        print("Connection Error") #to handle exception 
+    try: 
+        yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
+    except: 
+        print("Some Error!") 
+    print('Task Completed!') 
+    #else: 
+    #p = lbll.config(text="Nie wprowadzono sciezki")
+    #print("nie wprowadzono sciezki")
+  
+# TextBox Creation
+inputtxt = tk.Text(frame,height = 5,width = 20)
+inputtxt.pack()
+# Button Creation
+printButton = tk.Button(frame,text = "sciezka_zatwierdz", command = printInput)
+printButton.pack()
+# Label Creation
+lbl = tk.Label(frame, text = "")
+lbl.pack()
+
+input2txt = tk.Text(frame,height = 5,width = 20)  
+input2txt.pack()
+print2Button = tk.Button(frame,text = "link_zatwierdz", command = printInput2)
+print2Button.pack()
+lbll = tk.Label(frame,text="")
+lbll.pack()
+
+
+
+frame.mainloop()
+
+
+
+#SAVE_PATH = "" # where to save #/home/karol/Pulpit/yt
