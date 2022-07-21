@@ -2,6 +2,7 @@ import tkinter
 from tkinter import ttk
 from turtle import color
 import tkinter.font as font
+from pytube import Playlist
 from pytube import YouTube 
 from pytube.cli import on_progress #this module contains the built in progress bar. 
 import time
@@ -9,7 +10,8 @@ import os
 from datetime import datetime
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
-global download_audio 
+global download_audio
+global download_audio_playlist 
 global download_video_HQ
 global download_video_LQ
 global currentMode
@@ -18,6 +20,7 @@ currentMode = 2
 download_video_HQ = 1 
 download_video_LQ = 0
 download_audio = 0 
+download_audio_playlist = 0
 
 # def step():
 #     for i in range(5):
@@ -33,6 +36,7 @@ TEXT_collor = "white"
 
 def changeDownladType():
     global download_audio 
+    global download_audio_playlist 
     global download_video_HQ
     global download_video_LQ
     global currentMode 
@@ -41,23 +45,34 @@ def changeDownladType():
         download_video_HQ = 1 
         download_video_LQ = 0
         download_audio = 0
+        download_audio_playlist = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (High quality)", command = changeDownladType)
         print("downlading video mode ON (HQ)")
     if currentMode == 2:
         download_video_HQ = 0
         download_video_LQ = 1
         download_audio = 0
+        download_audio_playlist = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Low quality)", command = changeDownladType)
         print("downlading video mode ON (LQ)")
     if currentMode == 3:
         download_video_HQ = 0
         download_video_LQ = 0
         download_audio = 1
+        download_audio_playlist = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio ", command = changeDownladType)
         print("downloading audio mode ON")
-
+    if currentMode == 4: 
+        download_video_HQ = 0
+        download_video_LQ = 0
+        download_audio = 0
+        download_audio_playlist = 0
+        download_audio_playlist = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST", command = changeDownladType)
+        print("downloading audio playlist mode ON")
+        
     currentMode += 1 
-    if currentMode >= 4:
+    if currentMode >= 5:
         currentMode = 1 
 
 def enableDownloadButton():
@@ -122,13 +137,12 @@ def buttonActionDownload():
         yt = YouTube(link,on_progress_callback=on_progress) 
     except: 
         print("YouTube(link) error: Connection Failed") #to handle exception 
-    #   pb.start()
-    #   step()
     global download_video_HQ
     global download_video_LQ
     global download_audio
+    global download_audio_playlist
 
-    print(download_video_HQ," ",download_video_LQ," ",download_audio)
+    print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist)
 
     if download_video_HQ == 1:
         try: 
@@ -139,36 +153,29 @@ def buttonActionDownload():
         try:
             stream = yt.streams.first()
             stream.download(SAVE_PATH)
-            #try:
-            #    filename = ''+yt.streams.first().default_filename
-            #except:
-            #    print ("cant make variable filename")
-            #try:
-            #     now =  datetime.now()
-            #     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-            #     date_time = stringReplace(date_time,'/','-') 
-            #     date_time = stringReplace(date_time,':','-') 
-            #     newFileName = ''+filename+' '+date_time+'.3gpp'
-            # except: 
-            #     print("cant make new file name to a film")
-            #print(newFileName)
-            #os.rename(filename,newFileName)
         except:
             print("yt.streams.first: error!")
     if download_audio == 1:
         try:
-            #now =  datetime.now()
-            #date_time = now.strftime("%m-%d-%Y,%H-%M-%S")
-            #new_title = yt.streams.first().default_filename+date_time
             yt.streams.get_audio_only("mp4").download(SAVE_PATH)
-            
-            #date_time = stringReplace(date_time,'/','-') 
-            #date_time = stringReplace(date_time,':','-') 
-            #newFileName = ''+filename+' '+date_time+'.3gpp'
-            #os.rename(filename,newFileName)
         except:
             print("yt.streams.get_audio_only: error!")
-    #pb.stop()
+    if download_audio_playlist == 1:
+        try:
+            playlist = Playlist(link)
+            count_ = 1
+            total = str(playlist.length)
+            for video in playlist.videos:
+                try:
+                    print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
+                    video.streams.filter(only_audio=True).first().download(SAVE_PATH)
+                    count_ += 1
+                except:
+                    print("some problem occured during dowloading!")
+        except:
+            print("Erorr during downloading palylist")
+            print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
+            
     print('Finished working!') 
 
 
@@ -179,10 +186,7 @@ date_time = stringReplace(date_time,':','-')+'.3gpp'
 date_time = date_time[:-5]
 print(date_time)
 
-# TextBox Creation
-textBoxPath = tkinter.Text(frame,height = 5,width = 20)
-#textbox = Entry(win, bg="white", width=50, borderwidth=2)
-#textBoxPath.insert(0,"Ener here a PATH")
+textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
 textBoxPath.pack()
 # Button Creation
 printButtonPath = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
@@ -192,8 +196,6 @@ printButtonPath.pack()
 labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=ASCI_grey,fg=TEXT_collor)
 labelPath['font'] = myFont
 labelPath.pack()
-#textBoxPath.bind("<FocusIn>", temp_text)
-
 
 textBoxDownload = tkinter.Text(frame,height = 5,width = 20)  
 textBoxDownload.pack()
@@ -204,7 +206,6 @@ printButtonDownload['font'] = myFont
 label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=ASCI_grey,fg=TEXT_collor)
 label_download['font'] = myFont
 label_download.pack()
-#frame.grid()
 
 # audio / video change button 
 
@@ -225,18 +226,5 @@ label_audioVideoChange = tkinter.Label(frame,text="You can change wether you wan
 label_audioVideoChange['font'] = myFont
 label_audioVideoChange.pack()
 
-# progressbar
-# pb = ttk.Progressbar(
-#     frame,
-#     orient='horizontal',
-#     mode='indeterminate',
-#     length=280
-# )
-# place the progressbar
-#pb.pack()
-
 frame.mainloop()
 
-
-
-#SAVE_PATH = "" # where to save #/home/karol/Pulpit/yt
