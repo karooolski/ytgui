@@ -8,6 +8,8 @@ from pytube.cli import on_progress #this module contains the built in progress b
 import time
 import os
 from datetime import datetime
+import colorama
+from colorama import Fore
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
 global download_audio
@@ -37,6 +39,15 @@ download_video_playlist_LQ = 0
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
+
+def playlistOrNot(linkk,confirm):
+    if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
+        return link
+    if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and confirm == "single_video":
+        return link
+    else:
+        print("UserErorr: link adressing playlist, not one film")
+        return ' ' # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
 
 def changeDownladType():
     global download_audio 
@@ -183,36 +194,42 @@ def buttonActionDownload():
     print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist," ",download_video_playlist_HQ," ",download_video_playlist_LQ)
 
     if download_video_HQ == 1:
-        yt = YouTube(link,on_progress_callback=on_progress) 
+        link = playlistOrNot(link,"single_video")
         try: 
+            yt = YouTube(link,on_progress_callback=on_progress) 
             yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)    
         except: 
-            print("yt.streams.filter error!\n Do you set the PATH correctly?")
+            print("download_video_HQ error!\n Do you set the PATH correctly?")
     if download_video_LQ == 1:
-        yt = YouTube(link,on_progress_callback=on_progress)
+        link = playlistOrNot(link,"single_video")
         try:
+            yt = YouTube(link,on_progress_callback=on_progress)
             stream = yt.streams.first()
             stream.download(SAVE_PATH)
         except:
-            print("yt.streams.first: error!")
+            print("download_video_LQ: error!")
     if download_audio == 1:
-        yt = YouTube(link,on_progress_callback=on_progress) 
+        link = playlistOrNot(link,"single_video")
         try:
+            yt = YouTube(link,on_progress_callback=on_progress)
             yt.streams.get_audio_only("mp4").download(SAVE_PATH)
         except:
             print("yt.streams.get_audio_only: error!")
     if download_audio_playlist == 1:
         try:
+            link = playlistOrNot(link,"playlist")
             playlist = Playlist(link)
             count_ = 1
             total = str(playlist.length)
             for video in playlist.videos:
                 temp_link = video.watch_url
-                yt2 = YouTube(temp_link,on_progress_callback=on_progress)
+                yt = YouTube(temp_link,on_progress_callback=on_progress)
                 try:
-                    print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
+                    print("downloading (",str(count_),"/",str(total),") ",video.title)
                     #yt2.video.streams.filter(only_audio=True).first().download(SAVE_PATH)
-                    yt2.streams.get_audio_only("mp4").download(SAVE_PATH)
+                    try:
+                        yt.streams.get_audio_only("mp4").download(SAVE_PATH)
+                    except: print("download_audio_playlist: Stream download erorrrrrrr")
                     count_ += 1
                 except:
                     print("some problem occured during dowloading!")
@@ -221,6 +238,7 @@ def buttonActionDownload():
             print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
     
     if download_video_playlist_HQ == 1:
+        link = playlistOrNot(link,"playlist")
         try:
             playlist = Playlist(link)
             count_ = 1
@@ -238,6 +256,7 @@ def buttonActionDownload():
             print("download_video_playlist_HQ: error!")    
 
     if download_video_playlist_LQ == 1:
+        link = playlistOrNot(link,"playlist")
         try:
             playlist = Playlist(link)
             count_ = 1
@@ -306,4 +325,3 @@ label_audioVideoChange['font'] = myFont
 label_audioVideoChange.pack()
 
 frame.mainloop()
-
