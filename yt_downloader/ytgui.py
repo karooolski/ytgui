@@ -133,10 +133,10 @@ def buttonActionDownload():
     print("Try download a video")
     print("link: "+link)
     print("SAVE_PATH: "+SAVE_PATH)
-    try: 
-        yt = YouTube(link,on_progress_callback=on_progress) 
-    except: 
-        print("YouTube(link) error: Connection Failed") #to handle exception 
+   # try: 
+    #    yt = YouTube(link,on_progress_callback=on_progress) 
+    #except: 
+    #    print("YouTube(link) error: Connection Failed") #to handle exception 
     global download_video_HQ
     global download_video_LQ
     global download_audio
@@ -145,6 +145,7 @@ def buttonActionDownload():
     print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist)
 
     if download_video_HQ == 1:
+        yt = YouTube(link,on_progress_callback=on_progress) 
         try: 
             yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)    
         except: 
@@ -156,6 +157,7 @@ def buttonActionDownload():
         except:
             print("yt.streams.first: error!")
     if download_audio == 1:
+        yt = YouTube(link,on_progress_callback=on_progress) 
         try:
             yt.streams.get_audio_only("mp4").download(SAVE_PATH)
         except:
@@ -166,9 +168,12 @@ def buttonActionDownload():
             count_ = 1
             total = str(playlist.length)
             for video in playlist.videos:
+                temp_link = video.watch_url
+                yt2 = YouTube(temp_link,on_progress_callback=on_progress)
                 try:
                     print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
-                    video.streams.filter(only_audio=True).first().download(SAVE_PATH)
+                    #yt2.video.streams.filter(only_audio=True).first().download(SAVE_PATH)
+                    yt2.streams.get_audio_only("mp4").download(SAVE_PATH)
                     count_ += 1
                 except:
                     print("some problem occured during dowloading!")
