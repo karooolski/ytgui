@@ -14,6 +14,8 @@ global download_audio
 global download_audio_playlist 
 global download_video_HQ
 global download_video_LQ
+global download_video_playlist_HQ
+global download_video_playlist_LQ
 global currentMode
 currentMode = 2
 
@@ -21,6 +23,8 @@ download_video_HQ = 1
 download_video_LQ = 0
 download_audio = 0 
 download_audio_playlist = 0
+download_video_playlist_HQ = 0 
+download_video_playlist_LQ = 0
 
 # def step():
 #     for i in range(5):
@@ -39,6 +43,8 @@ def changeDownladType():
     global download_audio_playlist 
     global download_video_HQ
     global download_video_LQ
+    global download_video_playlist_HQ
+    global download_video_playlist_LQ   
     global currentMode 
 
     if currentMode == 1:
@@ -46,6 +52,8 @@ def changeDownladType():
         download_video_LQ = 0
         download_audio = 0
         download_audio_playlist = 0
+        download_video_playlist_HQ = 0 
+        download_video_playlist_LQ = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (High quality)", command = changeDownladType)
         print("downlading video mode ON (HQ)")
     if currentMode == 2:
@@ -53,6 +61,8 @@ def changeDownladType():
         download_video_LQ = 1
         download_audio = 0
         download_audio_playlist = 0
+        download_video_playlist_HQ = 0 
+        download_video_playlist_LQ = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Low quality)", command = changeDownladType)
         print("downlading video mode ON (LQ)")
     if currentMode == 3:
@@ -60,6 +70,8 @@ def changeDownladType():
         download_video_LQ = 0
         download_audio = 1
         download_audio_playlist = 0
+        download_video_playlist_HQ = 0 
+        download_video_playlist_LQ = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio ", command = changeDownladType)
         print("downloading audio mode ON")
     if currentMode == 4: 
@@ -68,11 +80,35 @@ def changeDownladType():
         download_audio = 0
         download_audio_playlist = 0
         download_audio_playlist = 1
+        download_video_playlist_HQ = 0 
+        download_video_playlist_LQ = 0
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST", command = changeDownladType)
         print("downloading audio playlist mode ON")
+
+    if currentMode == 5: 
+        download_video_HQ = 0
+        download_video_LQ = 0
+        download_audio = 0
+        download_audio_playlist = 0
+        download_audio_playlist = 0
+        download_video_playlist_HQ = 1 
+        download_video_playlist_LQ = 0
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download vido PLAYLIST (HQ)", command = changeDownladType)
+        print("downloading video playlist in high quality mode ON")
+
+    if currentMode == 6: 
+        download_video_HQ = 0
+        download_video_LQ = 0
+        download_audio = 0
+        download_audio_playlist = 0
+        download_audio_playlist = 0
+        download_video_playlist_HQ = 0 
+        download_video_playlist_LQ = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download video PLAYLIST (LQ)", command = changeDownladType)
+        print("downloading video playlist in low quality mode ON")
         
     currentMode += 1 
-    if currentMode >= 5:
+    if currentMode >= 7:
         currentMode = 1 
 
 def enableDownloadButton():
@@ -141,8 +177,10 @@ def buttonActionDownload():
     global download_video_LQ
     global download_audio
     global download_audio_playlist
+    global download_video_playlist_HQ
+    global download_video_playlist_LQ
 
-    print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist)
+    print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist," ",download_video_playlist_HQ," ",download_video_playlist_LQ)
 
     if download_video_HQ == 1:
         yt = YouTube(link,on_progress_callback=on_progress) 
@@ -151,6 +189,7 @@ def buttonActionDownload():
         except: 
             print("yt.streams.filter error!\n Do you set the PATH correctly?")
     if download_video_LQ == 1:
+        yt = YouTube(link,on_progress_callback=on_progress)
         try:
             stream = yt.streams.first()
             stream.download(SAVE_PATH)
@@ -180,7 +219,42 @@ def buttonActionDownload():
         except:
             print("Erorr during downloading palylist")
             print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
-            
+    
+    if download_video_playlist_HQ == 1:
+        try:
+            playlist = Playlist(link)
+            count_ = 1
+            total = str(playlist.length)
+            for video in playlist.videos:
+                temp_link = video.watch_url
+                yt = YouTube(temp_link,on_progress_callback=on_progress)
+                try:
+                    print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
+                    yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
+                    count_ += 1
+                except:
+                    print("download_video_playlist_HQ: fail during downloading")
+        except:
+            print("download_video_playlist_HQ: error!")    
+
+    if download_video_playlist_LQ == 1:
+        try:
+            playlist = Playlist(link)
+            count_ = 1
+            total = str(playlist.length)
+            for video in playlist.videos:
+                temp_link = video.watch_url
+                yt = YouTube(temp_link,on_progress_callback=on_progress)
+                try:
+                    print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
+                    stream = yt.streams.first()
+                    stream.download(SAVE_PATH)
+                    count_ += 1
+                except:
+                    print("download_video_playlist_HQ: fail during downloading")
+        except:
+            print("download_video_playlist_HQ: error!")          
+                
     print('Finished working!') 
 
 
