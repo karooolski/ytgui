@@ -1,4 +1,6 @@
-from pytube import YouTube #29,30.07.2022, first try 23.07.2022
+#This code download the video and the audio from YouTube and converts it to the one video (mp4)
+#Using ffmpeg (added to the path in windows global variables)
+from pytube import YouTube #29,30.07.2022
 from pytube.cli import on_progress
 import ffmpeg # it can download 1080p but without sound
 SAVE_PATH = "C:/Users/Karol/Desktop/ytgui" # where to save 
