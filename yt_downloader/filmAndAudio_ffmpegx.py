@@ -31,7 +31,6 @@ def merge():
         video = ffmpeg.input("video.mp4")
         audio = ffmpeg.input("audio.mp3")
         ffmpeg.output(audio, video, title+".mp4").run(overwrite_output=True)
-    #download audio only
     except:
         print("Merge failed")
 downloadVideo()
