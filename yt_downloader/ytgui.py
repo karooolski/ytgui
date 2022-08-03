@@ -10,41 +10,111 @@ import os
 from datetime import datetime
 import colorama
 from colorama import Fore
+import ffmpeg
+#from moviepy import *
+
+from moviepy.audio.io import AudioFileClip
+from moviepy.audio.AudioClip import *  # write_audiofile
+from moviepy.audio.io.AudioFileClip import * # close
+
+#from moviepy.editor import AudioFileClip # pyinstaller zadziala ale nie zrobi mp3
+#from moviepy.audio.io import AudioFileClip # earlier: from moviepy.editor import AudioFileClip
+#from moviepy import *
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
-global download_audio
+global download_mp4_audio
 global download_mp3_audio
 global download_mp3_audio_playlist
-global download_audio_playlist 
+global download_mp4_audio_playlist 
 global download_video_1080p
-global download_video_HQ
+global download_video_1080p_merge  # download audio && video in 1080p and merge it
+global download_video_720pMAX
 global download_video_LQ
-global download_video_playlist_HQ
+global download_video_playlist_720pMAX
 global download_video_playlist_LQ
 global currentMode
 currentMode = 2
 
 download_video_1080p = 0
-download_video_HQ = 1 
+download_video_1080p_merge = 0
+download_video_720pMAX = 1 
 download_video_LQ = 0
-download_audio = 0 
+download_mp4_audio = 0 
 download_mp3_audio = 0
 download_mp3_audio_playlist = 0
-download_audio_playlist = 0
-download_video_playlist_HQ = 0 
+download_mp4_audio_playlist = 0
+download_video_playlist_720pMAX = 0 
 download_video_playlist_LQ = 0
-
-# def step():
-#     for i in range(5):
-#         ws.update_idletasks()
-#         pb1['value'] += 20
-#         time.sleep(1)
-
-#def temp_text(e):
-#   textBoxPath.delete(0,"end")
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
+
+# Usage: download video in 1080p and merge with audio
+def downloadVideo():   #download video only
+    try:  
+        yt = YouTube(link,on_progress_callback=on_progress)
+        yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="video.mp4")
+    except:
+        print("Download video failed")    
+
+# Usage: download video in 1080p and merge with audio
+def downloadAudio():   #download audio onldy
+    global title
+    try:
+        yt = YouTube(link,on_progress_callback=on_progress)
+        yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audio.mp3")
+        title = yt.title
+    except: 
+        print("Download audio failed")
+        
+# Usage: download video in 1080p and merge with audio
+def merge():
+    try:
+        video = ffmpeg.input("video.mp4")
+        audio = ffmpeg.input("audio.mp3")
+        ffmpeg.output(audio, video, title+".mp4").run(overwrite_output=True)
+        # remove trash 
+        location = SAVE_PATH
+        file = "video.mp4"
+        path = os.path.join(location, file)
+        os.remove(path)
+        file = "audio.mp3"
+        path = os.path.join(location, file)
+        os.remove(path)
+    except:
+        print("Merge failed")
+
+# usage: downloading mp3
+def convert_to_mp3_with_metadata(file_path: str) -> str:
+    try:
+        # Use moviepy to convert an mp4 to an mp3 with metadata support. Delete mp4 afterwards
+        try:
+            audio_clip = AudioFileClip(file_path)
+            try:
+                file_path = file_path.replace("mp4", "mp3")
+                audio_clip.write_audiofile(file_path)
+                audio_clip.close()
+                try:
+                    os.remove(file_path.replace("mp3", "mp4")) # remove mp4 file
+                    return file_path
+                except: print("couldnt remove mp4 temporary file")
+            except: print("couldnt write and close adiofile")
+        except: print("couldnt make AdioFileClip")
+    except:
+        print("convert_to_mp3_with_metadata function error!")
+
+# usage: downloading mp3
+def download_video(yt: YouTube, file_type: str, downloads_path: str):
+    try:
+    # Download a video and debug progress
+        if file_type == "mp4":
+            video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+        else:
+            video = yt.streams.filter(only_audio=True).get_audio_only()
+        video.download(downloads_path)
+        return video
+    except: 
+        print("download video (function) error!")
 
 def playlistOrNot(linkk,confirm):
     if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
@@ -56,93 +126,102 @@ def playlistOrNot(linkk,confirm):
         return ' ' # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
 
 def resetValues():
-    global download_audio
+    global download_mp4_audio
     global download_mp3_audio
     global download_mp3_audio_playlist 
-    global download_audio_playlist 
-    global download_video_HQ
+    global download_mp4_audio_playlist 
+    global download_video_720pMAX
     global download_video_LQ
-    global download_video_playlist_HQ
+    global download_video_playlist_720pMAX
     global download_video_playlist_LQ   
-    global currentMode    
     global download_video_1080p
+    global download_video_1080p_merge
     download_video_1080p = 0
-    download_video_HQ = 0 
+    download_video_1080p_merge = 0
+    download_video_720pMAX = 0 
     download_video_LQ = 0
-    download_audio = 0
+    download_mp4_audio = 0
     download_mp3_audio = 0
     download_mp3_audio_playlist = 0
-    download_audio_playlist = 0
-    download_video_playlist_HQ = 0 
+    download_mp4_audio_playlist = 0
+    download_video_playlist_720pMAX = 0 
     download_video_playlist_LQ = 0
 
 def changeDownladType():
-    global download_audio
+    global download_mp4_audio
     global download_mp3_audio
     global download_mp3_audio_playlist 
-    global download_audio_playlist 
+    global download_mp4_audio_playlist 
     global download_video_1080p
-    global download_video_HQ
+    global download_video_1080p_merge
+    global download_video_720pMAX
     global download_video_LQ
-    global download_video_playlist_HQ
+    global download_video_playlist_720pMAX
     global download_video_playlist_LQ   
     global currentMode 
 
     if currentMode == 1:
         resetValues()
-        download_video_HQ = 1 
+        download_video_720pMAX = 1 
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (720p MAX)", command = changeDownladType)
-        print("downlading video mode ON (HQ)")
+        print("downlading video mode ON (720p MAX)")
     
     if currentMode == 2:
         resetValues()
         download_video_LQ = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Lowest quality)", command = changeDownladType)
-        print("downlading video mode ON (LQ)")
+        print("downlading video mode ON (Lowest Quality)")
     
     if currentMode == 3:
         resetValues()
-        download_audio = 1
+        download_mp4_audio = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp4)", command = changeDownladType)
-        print("downloading audio mode ON")
+        print("downloading audio mode ON (mp4)")
     
     if currentMode == 4: 
         resetValues()
-        download_audio_playlist = 1
+        download_mp4_audio_playlist = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
-        print("downloading audio playlist mode ON")
+        print("downloading audio playlist mode ON (mp4)")
 
     if currentMode == 5: 
         resetValues()
-        download_video_playlist_HQ = 1 
+        download_video_playlist_720pMAX = 1 
         ButtonAudioVideoDownloadChange.configure(text="Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
-        print("downloading video playlist in high quality mode ON")
+        print("downloading video playlist in high quality mode ON (720p MAX)")
 
     if currentMode == 6: 
         resetValues()
         download_video_playlist_LQ = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
-        print("downloading video playlist in low quality mode ON")
+        print("downloading video playlist in ON (Lowest Quality)")
     
     if currentMode == 7:
         resetValues()
         download_video_1080p = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video in 1080p with no Voice", command = changeDownladType)
-        print("downloading video 1080p no voice mode ON")
+        print("downloading video 1080p ON (mp4, no voice)")
     
     if currentMode == 8: 
         resetValues()
         download_mp3_audio = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp3)", command = changeDownladType)
-        print("downloading audio (mp3) mode ON")
+        print("downloading audio mode ON (mp3)")
+        
     if currentMode == 9:
         resetValues()
         download_mp3_audio_playlist = 1 
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
-        print("downloading audio PLAYLIST (mp3) mode ON")                
+        print("downloading audio PLAYLIST mode ON (mp3)")                
+    
+    if currentMode == 10:
+        resetValues()
+        download_video_1080p_merge = 1
+        ButtonAudioVideoDownloadChange.configure(text="download video 1080p and merge with audio",command = changeDownladType)
+        print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
     
     currentMode += 1 
-    if currentMode >= 10:
+    if currentMode >= 11:
         currentMode = 1 
 
 def enableDownloadButton():
@@ -214,24 +293,25 @@ def buttonActionDownload():
     #except: 
     #    print("YouTube(link) error: Connection Failed") #to handle exception 
     global download_video_1080p
-    global download_video_HQ
+    global download_video_1080p_merge
+    global download_video_720pMAX
     global download_video_LQ
-    global download_audio
+    global download_mp4_audio
     global download_mp3_audio_playlist
     global download_mp3_audio
-    global download_audio_playlist
-    global download_video_playlist_HQ
+    global download_mp4_audio_playlist
+    global download_video_playlist_720pMAX
     global download_video_playlist_LQ
 
-    print(download_video_HQ," ",download_video_LQ," ",download_audio," ",download_audio_playlist," ",download_video_playlist_HQ," ",download_video_playlist_LQ," ",download_video_1080p," ",download_mp3_audio," ",download_mp3_audio_playlist)
+    print(download_video_720pMAX," ",download_video_LQ," ",download_mp4_audio," ",download_mp4_audio_playlist," ",download_video_playlist_720pMAX," ",download_video_playlist_LQ," ",download_video_1080p," ",download_mp3_audio," ",download_mp3_audio_playlist," ", download_video_1080p_merge)
 
-    if download_video_HQ == 1:
+    if download_video_720pMAX == 1:
         link = playlistOrNot(link,"single_video")
         try: 
             yt = YouTube(link,on_progress_callback=on_progress) 
             yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)    
         except: 
-            print("download_video_HQ error!\n Do you set the PATH correctly?")
+            print("download_video_720pMAX error!\n Do you set the PATH correctly?")
     
     if download_video_LQ == 1:
         link = playlistOrNot(link,"single_video")
@@ -242,7 +322,7 @@ def buttonActionDownload():
         except:
             print("download_video_LQ: error!")
     
-    if download_audio == 1:
+    if download_mp4_audio == 1:
         link = playlistOrNot(link,"single_video")
         try:
             yt = YouTube(link,on_progress_callback=on_progress)
@@ -250,7 +330,7 @@ def buttonActionDownload():
         except:
             print("yt.streams.get_audio_only: error!")
     
-    if download_audio_playlist == 1:
+    if download_mp4_audio_playlist == 1:
         try:
             link = playlistOrNot(link,"playlist")
             playlist = Playlist(link)
@@ -261,10 +341,9 @@ def buttonActionDownload():
                 yt = YouTube(temp_link,on_progress_callback=on_progress)
                 try:
                     print("downloading (",str(count_),"/",str(total),") ",video.title)
-                    #yt2.video.streams.filter(only_audio=True).first().download(SAVE_PATH)
                     try:
                         yt.streams.get_audio_only("mp4").download(SAVE_PATH)
-                    except: print("download_audio_playlist: Stream download error")
+                    except: print("download_mp4_audio_playlist: Stream download error")
                     count_ += 1
                 except:
                     print("some problem occured during dowloading!")
@@ -272,7 +351,7 @@ def buttonActionDownload():
             print("Erorr during downloading palylist")
             print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
     
-    if download_video_playlist_HQ == 1:
+    if download_video_playlist_720pMAX == 1:
         link = playlistOrNot(link,"playlist")
         try:
             playlist = Playlist(link)
@@ -286,9 +365,9 @@ def buttonActionDownload():
                     yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
                     count_ += 1
                 except:
-                    print("download_video_playlist_HQ: fail during downloading")
+                    print("download_video_playlist_720pMAX: fail during downloading")
         except:
-            print("download_video_playlist_HQ: error!")    
+            print("download_video_playlist_720pMAX: error!")    
 
     if download_video_playlist_LQ == 1:
         link = playlistOrNot(link,"playlist")
@@ -305,35 +384,29 @@ def buttonActionDownload():
                     stream.download(SAVE_PATH)
                     count_ += 1
                 except:
-                    print("download_video_playlist_HQ: fail during downloading")
+                    print("download_video_playlist_720pMAX: fail during downloading")
         except:
-            print("download_video_playlist_HQ: error!")          
+            print("download_video_playlist_720pMAX: error!")          
     
     if download_video_1080p == 1:
         link = playlistOrNot(link,"single_video")
         downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
-        #downloadVideoWithRezolution(SAVE_PATH,link,rezolution)
-        #try:
-        #     yt = YouTube(link,on_progress_callback=on_progress) 
-        #     yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH)
-        #except: 
-        #    print("Download video in 1080p failed")
             
     if download_mp3_audio == 1:
         link = playlistOrNot(link,"single_video")
-        new_file_name = ""
         try:
              yt = YouTube(link,on_progress_callback=on_progress)
-             new_file_name = " "+ yt.title+""+'.mp3'
-             print("new filename is "+new_file_name)
         except:
              ("mp3 download connection error")
         try:
-            yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename=+new_file_name+".mp3")
+            audio = download_video(yt,"mp3", SAVE_PATH)
+            try:
+                file_path = os.path.join(SAVE_PATH, audio.default_filename)
+                file_path = convert_to_mp3_with_metadata(file_path)
+            except: 
+                print("couldnt convert mp4 to mp3")
         except:
-            #altenative method to download the file, when filename has for.ex. chinese letters, im setting my own filename
-            print("audio mp3 dowloading error! I will start alternative download method, filanme is downloaded audio.mp3")
-            yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename=date_time+".mp3")
+            print("audio mp3 dowloading error!")
         
        
     if download_mp3_audio_playlist == 1:
@@ -345,25 +418,22 @@ def buttonActionDownload():
             for video in playlist.videos:
                 temp_link = video.watch_url
                 yt = YouTube(temp_link,on_progress_callback=on_progress)
-                new_file_name = yt.title + '.mp3'
                 try:
                     print("downloading (",str(count_),"/",str(total),") ",video.title)
-                    #yt2.video.streams.filter(only_audio=True).first().download(SAVE_PATH)
-                    try:
-                        yt.streams.get_audio_only("mp4").download(SAVE_PATH, filename = new_file_name)
-                    except: 
-                        print("download_mp3_audio_playlist: Stream download eror")
-                        print("maybe the name of the film contains unicode characters that can not be handled during mp3 downloading")
-                        print("i will try to do alternative download method")
-                        new_file_name = "audio " + date_time + '.mp3'
-                        yt.streams.get_audio_only("mp4").download(SAVE_PATH, filename = new_file_name)
+                    audio = download_video(yt,"mp3", SAVE_PATH)
+                    file_path = os.path.join(SAVE_PATH, audio.default_filename)
+                    file_path = convert_to_mp3_with_metadata(file_path)
                     count_ += 1
                 except:
                     print("some problem occured during dowloading!")
         except:
             print("Erorr during downloading palylist")
             print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")           
-        
+    if download_video_1080p_merge == 1:
+        downloadVideo()
+        downloadAudio()
+        merge() 
+       
     print('Finished working!') 
 
 
@@ -398,11 +468,11 @@ label_download.pack()
 # audio / video change button 
 
 temp_string = ""
-if download_video_HQ == 1:
+if download_video_720pMAX == 1:
     temp_string = "video (720p max)"
 if download_video_LQ == 1:
     temp_string = "video (Lowest Quality)"
-if download_audio == 1:
+if download_mp4_audio == 1:
     temp_string = "audio (mp4)"   
 
 
