@@ -56,6 +56,7 @@ download_video_playlist_LQ = 0
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
+TEXT_warning = "red"
 
 # Usage: download video in 1080p and merge with audio
 def downloadVideo():   #download video only
@@ -74,6 +75,10 @@ def downloadAudio():   #download audio onldy
         title = yt.title
     except: 
         print("Download audio failed")
+
+def remove_file(location,filename):
+    path = os.path.join(location,filename)
+    os.remove(path)
         
 # Usage: download video in 1080p and merge with audio
 def merge():
@@ -81,14 +86,8 @@ def merge():
         video = ffmpeg.input("video.mp4")
         audio = ffmpeg.input("audio.mp3")
         ffmpeg.output(audio, video, title+".mp4").run(overwrite_output=True)
-        # remove trash 
-        location = SAVE_PATH
-        file = "video.mp4"
-        path = os.path.join(location, file)
-        os.remove(path)
-        file = "audio.mp3"
-        path = os.path.join(location, file)
-        os.remove(path)
+        remove_file(SAVE_PATH,"video.mp4")
+        remove_file(SAVE_PATH,"audio.mp3")
     except:
         print("Merge failed")
 
@@ -158,6 +157,7 @@ def resetValues():
     download_mp4_audio_playlist = 0
     download_video_playlist_720pMAX = 0 
     download_video_playlist_LQ = 0
+    label_download.configure(background=ASCI_grey,text="You can change wether you want do download video / audio ^",fg=TEXT_collor)
 
 def changeDownladType():
     global download_mp4_audio
@@ -179,71 +179,72 @@ def changeDownladType():
         download_video_720pMAX = 1 
         ButtonAudioVideoDownloadChange.configure(text="Now you will download video (720p MAX)", command = changeDownladType)
         print("downlading video mode ON (720p MAX)")
-    
+
     if currentMode == 2:
         resetValues()
-        download_video_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Lowest quality)", command = changeDownladType)
-        print("downlading video mode ON (Lowest Quality)")
+        download_mp3_audio_with_thumbnail = 1
+        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 with thumbnail",command = changeDownladType)
     
     if currentMode == 3:
         resetValues()
-        download_mp4_audio = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp4)", command = changeDownladType)
-        print("downloading audio mode ON (mp4)")
-    
+        download_mp3_audio_playlist_with_thumbnails = 1
+        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 playlist with thumbnails",command = changeDownladType)
+
     if currentMode == 4: 
-        resetValues()
-        download_mp4_audio_playlist = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
-        print("downloading audio playlist mode ON (mp4)")
-
-    if currentMode == 5: 
-        resetValues()
-        download_video_playlist_720pMAX = 1 
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
-        print("downloading video playlist in high quality mode ON (720p MAX)")
-
-    if currentMode == 6: 
-        resetValues()
-        download_video_playlist_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
-        print("downloading video playlist in ON (Lowest Quality)")
-    
-    if currentMode == 7:
-        resetValues()
-        download_video_1080p = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video in 1080p with no Voice", command = changeDownladType)
-        print("downloading video 1080p ON (mp4, no voice)")
-    
-    if currentMode == 8: 
         resetValues()
         download_mp3_audio = 1
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp3)", command = changeDownladType)
         print("downloading audio mode ON (mp3)")
         
-    if currentMode == 9:
+    if currentMode == 5:
         resetValues()
         download_mp3_audio_playlist = 1 
         ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
-        print("downloading audio PLAYLIST mode ON (mp3)")                
-    
-    if currentMode == 10:
+        print("downloading audio PLAYLIST mode ON (mp3)")        
+
+    if currentMode == 6:
+        resetValues()
+        download_mp4_audio = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp4)", command = changeDownladType)
+        print("downloading audio mode ON (mp4)")
+
+    if currentMode == 7: 
+        resetValues()
+        download_mp4_audio_playlist = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
+        print("downloading audio playlist mode ON (mp4)")
+
+    if currentMode == 8: 
+        resetValues()
+        download_video_playlist_720pMAX = 1 
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
+        print("downloading video playlist in high quality mode ON (720p MAX)")
+
+    if currentMode == 9:
         resetValues()
         download_video_1080p_merge = 1
         ButtonAudioVideoDownloadChange.configure(text="download video 1080p and merge with audio",command = changeDownladType)
+        label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
         print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
     
+    if currentMode == 10:
+        resetValues()
+        download_video_1080p = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download video in 1080p with no Voice", command = changeDownladType)
+        print("downloading video 1080p ON (mp4, no sound)")     
+
     if currentMode == 11:
         resetValues()
-        download_mp3_audio_with_thumbnail = 1
-        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 with thumbnail",command = changeDownladType)
-    
-    if currentMode == 12:
+        download_video_LQ = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Lowest quality)", command = changeDownladType)
+        print("downlading video mode ON (Lowest Quality)")
+
+    if currentMode == 12: 
         resetValues()
-        download_mp3_audio_playlist_with_thumbnails = 1
-        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 playlist with thumbnails",command = changeDownladType)
-        
+        download_video_playlist_LQ = 1
+        ButtonAudioVideoDownloadChange.configure(text="Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
+        print("downloading video playlist in ON (Lowest Quality)")
+      
     currentMode += 1 
     if currentMode >= 13:
         currentMode = 1 
@@ -471,6 +472,7 @@ def buttonActionDownload():
                 audiofile.tag.artist = yt._author
                 audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
                 audiofile.tag.save()
+                remove_file(SAVE_PATH,"szablon.png")
                 # you can see a thumbnail using VLC media player, on windows
             except:
                 print("Couldn`t make an image to file "+file_path)
@@ -530,6 +532,7 @@ def buttonActionDownload():
                     audiofile.tag.artist = yt._author
                     audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
                     audiofile.tag.save()
+                    remove_file(SAVE_PATH,"szablon.png")
                     # you can see a thumbnail using VLC media player, on windows                
                 except:
                     print("Couldn`t make an image to file "+file_path)
