@@ -179,79 +179,82 @@ def changeDownladType():
     global download_video_playlist_LQ   
     global currentMode 
 
+    max_modes = 13  # count -1 , the last is a switcher to first mode
+    
     if currentMode == 1:
         resetValues()
         download_video_720pMAX = 1 
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video (720p MAX)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="1/12 Now you will download video (720p MAX)", command = changeDownladType)
         print("downlading video mode ON (720p MAX)")
 
     if currentMode == 2:
         resetValues()
         download_mp3_audio_with_thumbnail = 1
-        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 with thumbnail",command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="2/12 download audio mp3 with thumbnail",command = changeDownladType)
     
     if currentMode == 3:
         resetValues()
         download_mp3_audio_playlist_with_thumbnails = 1
-        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 playlist with thumbnails",command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="3/12 download audio mp3 playlist with thumbnails",command = changeDownladType)
 
     if currentMode == 4: 
         resetValues()
         download_mp3_audio = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp3)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="4/12 Now you will download audio (mp3)", command = changeDownladType)
         print("downloading audio mode ON (mp3)")
         
     if currentMode == 5:
         resetValues()
         download_mp3_audio_playlist = 1 
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="5/12 Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
         print("downloading audio PLAYLIST mode ON (mp3)")        
 
     if currentMode == 6:
         resetValues()
         download_mp4_audio = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio (mp4)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="6/12 Now you will download audio (mp4)", command = changeDownladType)
         print("downloading audio mode ON (mp4)")
 
     if currentMode == 7: 
         resetValues()
         download_mp4_audio_playlist = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="7/12 Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
         print("downloading audio playlist mode ON (mp4)")
 
     if currentMode == 8: 
         resetValues()
         download_video_playlist_720pMAX = 1 
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="8/12 Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
         print("downloading video playlist in high quality mode ON (720p MAX)")
 
     if currentMode == 9:
         resetValues()
         download_video_1080p_merge = 1
-        ButtonAudioVideoDownloadChange.configure(text="download video 1080p and merge with audio",command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="9/12 download video 1080p and merge with audio",command = changeDownladType)
         label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
         print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
     
     if currentMode == 10:
         resetValues()
         download_video_1080p = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video in 1080p with no Voice", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="10/12 Now you will download video in 1080p with no Voice", command = changeDownladType)
         print("downloading video 1080p ON (mp4, no sound)")     
 
     if currentMode == 11:
         resetValues()
         download_video_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video (Lowest quality)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="11/12 Now you will download video (Lowest quality)", command = changeDownladType)
         print("downlading video mode ON (Lowest Quality)")
 
     if currentMode == 12: 
         resetValues()
         download_video_playlist_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
+        ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
         print("downloading video playlist in ON (Lowest Quality)")
-      
+    
+    
     currentMode += 1 
-    if currentMode >= 13:
+    if currentMode >= max_modes:
         currentMode = 1 
 
 def enableDownloadButton():
@@ -328,10 +331,6 @@ def buttonActionDownload():
     print("Try download a video")
     print("link: "+link)
     print("SAVE_PATH: "+SAVE_PATH)
-   # try: 
-    #    yt = YouTube(link,on_progress_callback=on_progress) 
-    #except: 
-    #    print("YouTube(link) error: Connection Failed") #to handle exception 
     global download_video_1080p
     global download_video_1080p_merge
     global download_video_720pMAX
@@ -471,33 +470,14 @@ def buttonActionDownload():
                     f.write(yt_image.content)
                 # convert audio meta data
                 audiofile = eyed3.load(file_path)
-                
                 if not audiofile.tag:
                     audiofile.initTag()
-                    
-                #audiotag = eyed3.core.Tag
-                #audiotag.artist = yt.author
-                # eyed3 -> id3 -> tag.py
                 tag = id3.Tag()
                 tag.parse(file_path)
                 tag.title = yt.title
                 tag.artist = yt.author
                 tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
-                
-                # if input os.path.join(SAVE_PATH,"szablon.jpg")
-                # instead 'szablon.jpg'
-                # then it works in .exe form but not show in windows media player
-                
-                # this code works the same, for setting image
-                #with open("szablon.jpg", "rb") as cover_art:
-                #    tag.images.set(3, cover_art.read(), "image/jpeg")
-                
                 tag.save(version=eyed3.id3.ID3_V2_3)
-                
-                #audiofile.tag.title = yt.title
-                #audiofile.tag.artist = yt._author
-                #audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.jpg','rb').read(), 'image/jpeg')
-                #audiofile.tag.save(version=eyed3.id3.ID3_V2_3)
                 remove_file(SAVE_PATH,"szablon.jpg")
                 # you can see a thumbnail using VLC media player, on windows
             except:
@@ -553,44 +533,17 @@ def buttonActionDownload():
                     # convert audio meta data
                     audiofile = eyed3.load(file_path)
                     if not audiofile.tag:
-                        audiofile.initTag()
-                    #audiofile.tag.title = yt.title
-                    #audiofile.tag.artist = yt._author
-                    #audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
-                    #audiofile.tag.save()
-                    
-                    #file_path = change_backslashes(file_path)
-                    
-                    tag = ""
-                    try: tag = id3.Tag()    
-                    except:  print("couldnt make id3.Tag()")
-                    
-                    try: tag.parse(file_path)
-                    except: print("couldnt parse filepath to tag")
-                    try:
-                        tag.title = yt.title
-                    except:
-                        print("couldnt switch fileneme of tag")
-                    
-                    try: 
-                        tag.artist = yt.author
-                    except: 
-                        print("couldnt make artist name")
-                    
+                        audiofile.initTag()   
+                    tag = id3.Tag()    
+                    tag.parse(file_path)
+                    tag.title = yt.title
+                    tag.artist = yt.author
                     try:
                         tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
                     except:
                         print("couldnt make an image by using tag")
-                    # this code works the same, for setting image (not after use pyinstaller, coz of string "szablon.png" must be os.path.join(etc...))
-                    #try:
-                    #    with open(os.path.join(SAVE_PATH,"szablon.jpg"), "rb") as cover_art:
-                    #        tag.images.set(3, cover_art.read(), "image/jpeg")
-                    #except:
-                    #    print("couldnt set an image by alternative method" + file_path)
-                     
-                    tag.save(version=eyed3.id3.ID3_V2_3) #version=eyed3.id3.ID3_V2_3
-                    remove_file(SAVE_PATH,"szablon.jpg")
-                    # you can see a thumbnail using VLC media player, on windows                
+                    tag.save(version=eyed3.id3.ID3_V2_3) # importand if u want to see effect also in windwos media player
+                    remove_file(SAVE_PATH,"szablon.jpg")             
                 except:
                     print("Couldn`t make an image to file "+file_path)
         except:
@@ -646,7 +599,7 @@ if download_mp4_audio == 1:
 
 
 
-ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="Now you will download "+temp_string, command = changeDownladType)
+ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
 ButtonAudioVideoDownloadChange['font'] = myFont
 ButtonAudioVideoDownloadChange.pack()
 label_audioVideoChange = tkinter.Label(frame,text="You can change wether you want do download video / audio ^", background=ASCI_grey,fg=TEXT_collor)
