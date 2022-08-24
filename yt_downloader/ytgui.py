@@ -11,6 +11,10 @@ from datetime import datetime
 import colorama
 from colorama import Fore
 import ffmpeg
+
+import requests
+import eyed3
+from eyed3.id3.frames import ImageFrame
 #from moviepy import *
 
 from moviepy.audio.io import AudioFileClip
@@ -24,7 +28,9 @@ from moviepy.audio.io.AudioFileClip import * # close
 
 global download_mp4_audio
 global download_mp3_audio
+global download_mp3_audio_with_thumbnail
 global download_mp3_audio_playlist
+global download_mp3_audio_playlist_with_thumbnails
 global download_mp4_audio_playlist 
 global download_video_1080p
 global download_video_1080p_merge  # download audio && video in 1080p and merge it
@@ -41,7 +47,9 @@ download_video_720pMAX = 1
 download_video_LQ = 0
 download_mp4_audio = 0 
 download_mp3_audio = 0
+download_mp3_audio_with_thumbnail = 0 
 download_mp3_audio_playlist = 0
+download_mp3_audio_playlist_with_thumbnails = 0
 download_mp4_audio_playlist = 0
 download_video_playlist_720pMAX = 0 
 download_video_playlist_LQ = 0
@@ -128,7 +136,9 @@ def playlistOrNot(linkk,confirm):
 def resetValues():
     global download_mp4_audio
     global download_mp3_audio
+    global download_mp3_audio_with_thumbnail
     global download_mp3_audio_playlist 
+    global download_mp3_audio_playlist_with_thumbnails
     global download_mp4_audio_playlist 
     global download_video_720pMAX
     global download_video_LQ
@@ -142,7 +152,9 @@ def resetValues():
     download_video_LQ = 0
     download_mp4_audio = 0
     download_mp3_audio = 0
+    download_mp3_audio_with_thumbnail = 0
     download_mp3_audio_playlist = 0
+    download_mp3_audio_playlist_with_thumbnails = 0
     download_mp4_audio_playlist = 0
     download_video_playlist_720pMAX = 0 
     download_video_playlist_LQ = 0
@@ -150,7 +162,9 @@ def resetValues():
 def changeDownladType():
     global download_mp4_audio
     global download_mp3_audio
+    global download_mp3_audio_with_thumbnail
     global download_mp3_audio_playlist 
+    global download_mp3_audio_playlist_with_thumbnails
     global download_mp4_audio_playlist 
     global download_video_1080p
     global download_video_1080p_merge
@@ -220,8 +234,18 @@ def changeDownladType():
         ButtonAudioVideoDownloadChange.configure(text="download video 1080p and merge with audio",command = changeDownladType)
         print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
     
+    if currentMode == 11:
+        resetValues()
+        download_mp3_audio_with_thumbnail = 1
+        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 with thumbnail",command = changeDownladType)
+    
+    if currentMode == 12:
+        resetValues()
+        download_mp3_audio_playlist_with_thumbnails = 1
+        ButtonAudioVideoDownloadChange.configure(text="download audio mp3 playlist with thumbnails",command = changeDownladType)
+        
     currentMode += 1 
-    if currentMode >= 11:
+    if currentMode >= 13:
         currentMode = 1 
 
 def enableDownloadButton():
@@ -236,6 +260,16 @@ def change_backslashes(word):
         #w = print(word[i])
         if l[i] == ex:
             l[i] = '/'
+        s = ''.join(l)
+    return(s)
+
+def change_backslashes_to_windows_type(word):
+    ex = '/'
+    l = list(word)
+    for i in range(len(word)):
+        #w = print(word[i])
+        if l[i] == ex:
+            l[i] = '\\'
         s = ''.join(l)
     return(s)
 
@@ -297,13 +331,15 @@ def buttonActionDownload():
     global download_video_720pMAX
     global download_video_LQ
     global download_mp4_audio
+    global download_mp3_audio_with_thumbnail
     global download_mp3_audio_playlist
+    global download_mp3_audio_playlist_with_thumbnails
     global download_mp3_audio
     global download_mp4_audio_playlist
     global download_video_playlist_720pMAX
     global download_video_playlist_LQ
 
-    print(download_video_720pMAX," ",download_video_LQ," ",download_mp4_audio," ",download_mp4_audio_playlist," ",download_video_playlist_720pMAX," ",download_video_playlist_LQ," ",download_video_1080p," ",download_mp3_audio," ",download_mp3_audio_playlist," ", download_video_1080p_merge)
+    print(download_video_720pMAX," ",download_video_LQ," ",download_mp4_audio," ",download_mp4_audio_playlist," ",download_video_playlist_720pMAX," ",download_video_playlist_LQ," ",download_video_1080p," ",download_mp3_audio," ",download_mp3_audio_playlist," ", download_video_1080p_merge," ",download_mp3_audio_with_thumbnail," ",download_mp3_audio_playlist_with_thumbnails)
 
     if download_video_720pMAX == 1:
         link = playlistOrNot(link,"single_video")
@@ -408,7 +444,40 @@ def buttonActionDownload():
         except:
             print("audio mp3 dowloading error!")
         
-       
+    if download_mp3_audio_with_thumbnail == 1: 
+        link = playlistOrNot(link,"single_video")
+        try:
+             yt = YouTube(link,on_progress_callback=on_progress)
+        except:
+             ("mp3 download connection error")
+        try:
+            audio = download_video(yt,"mp3", SAVE_PATH)
+            file_path = ""
+            try:
+                file_path = os.path.join(SAVE_PATH, audio.default_filename)
+                file_path = convert_to_mp3_with_metadata(file_path)
+            except: 
+                print("couldnt convert mp4 to mp3")
+            try: 
+                # download video thumbnail
+                yt_image = requests.get(yt.thumbnail_url)
+                with open(os.path.join(SAVE_PATH,"szablon.png"),'wb') as f: 
+                    f.write(yt_image.content)
+                # convert audio meta data
+                audiofile = eyed3.load(file_path)
+                if not audiofile.tag:
+                    audiofile.initTag()
+                audiofile.tag.title = yt.title
+                audiofile.tag.artist = yt._author
+                audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
+                audiofile.tag.save()
+                # you can see a thumbnail using VLC media player, on windows
+            except:
+                print("Couldn`t make an image to file "+file_path)
+            
+        except:
+            print("audio mp3 dowloading error!")      
+ 
     if download_mp3_audio_playlist == 1:
         try:
             link = playlistOrNot(link,"playlist")
@@ -428,7 +497,47 @@ def buttonActionDownload():
                     print("some problem occured during dowloading!")
         except:
             print("Erorr during downloading palylist")
+            print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")       
+              
+    if download_mp3_audio_playlist_with_thumbnails == 1:
+        try:
+            link = playlistOrNot(link,"playlist")
+            playlist = Playlist(link)
+            count_ = 1
+            total = str(playlist.length)
+            for video in playlist.videos:
+                temp_link = video.watch_url
+                yt = YouTube(temp_link,on_progress_callback=on_progress)
+                file_path = ""
+                try:
+                    print("downloading (",str(count_),"/",str(total),") ",video.title)
+                    audio = download_video(yt,"mp3", SAVE_PATH)
+                    file_path = os.path.join(SAVE_PATH, audio.default_filename)
+                    file_path = convert_to_mp3_with_metadata(file_path)
+                    count_ += 1
+                except:
+                    print("some problem occured during dowloading!")
+                try:
+                    # download video thumbnail
+                    yt_image = requests.get(yt.thumbnail_url)
+                    with open(os.path.join(SAVE_PATH,"szablon.png"),'wb') as f: 
+                        f.write(yt_image.content)
+                    # convert audio meta data
+                    audiofile = eyed3.load(file_path)
+                    if not audiofile.tag:
+                        audiofile.initTag()
+                    audiofile.tag.title = yt.title
+                    audiofile.tag.artist = yt._author
+                    audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
+                    audiofile.tag.save()
+                    # you can see a thumbnail using VLC media player, on windows                
+                except:
+                    print("Couldn`t make an image to file "+file_path)
+        except:
+            print("Erorr during downloading palylist")
             print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")           
+    
+
     if download_video_1080p_merge == 1:
         downloadVideo()
         downloadAudio()
