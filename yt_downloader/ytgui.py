@@ -15,7 +15,12 @@ import ffmpeg
 import requests
 import eyed3
 from eyed3.id3.frames import ImageFrame
+from eyed3.id3 import tag
+import eyed3.id3 as id3
+##from eyed3.core import Tag
 #from moviepy import *
+#import eyed3.mp3.Mp3AudioFile #- For mp3 audio files.
+#import eyed3.id3.TagFile #- For raw ID3 data files
 
 from moviepy.audio.io import AudioFileClip
 from moviepy.audio.AudioClip import *  # write_audiofile
@@ -462,17 +467,38 @@ def buttonActionDownload():
             try: 
                 # download video thumbnail
                 yt_image = requests.get(yt.thumbnail_url)
-                with open(os.path.join(SAVE_PATH,"szablon.png"),'wb') as f: 
+                with open(os.path.join(SAVE_PATH,"szablon.jpg"),'wb') as f: 
                     f.write(yt_image.content)
                 # convert audio meta data
                 audiofile = eyed3.load(file_path)
+                
                 if not audiofile.tag:
                     audiofile.initTag()
-                audiofile.tag.title = yt.title
-                audiofile.tag.artist = yt._author
-                audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
-                audiofile.tag.save()
-                remove_file(SAVE_PATH,"szablon.png")
+                    
+                #audiotag = eyed3.core.Tag
+                #audiotag.artist = yt.author
+                # eyed3 -> id3 -> tag.py
+                tag = id3.Tag()
+                tag.parse(file_path)
+                tag.title = yt.title
+                tag.artist = yt.author
+                tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
+                
+                # if input os.path.join(SAVE_PATH,"szablon.jpg")
+                # instead 'szablon.jpg'
+                # then it works in .exe form but not show in windows media player
+                
+                # this code works the same, for setting image
+                #with open("szablon.jpg", "rb") as cover_art:
+                #    tag.images.set(3, cover_art.read(), "image/jpeg")
+                
+                tag.save(version=eyed3.id3.ID3_V2_3)
+                
+                #audiofile.tag.title = yt.title
+                #audiofile.tag.artist = yt._author
+                #audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.jpg','rb').read(), 'image/jpeg')
+                #audiofile.tag.save(version=eyed3.id3.ID3_V2_3)
+                remove_file(SAVE_PATH,"szablon.jpg")
                 # you can see a thumbnail using VLC media player, on windows
             except:
                 print("Couldn`t make an image to file "+file_path)
@@ -522,17 +548,48 @@ def buttonActionDownload():
                 try:
                     # download video thumbnail
                     yt_image = requests.get(yt.thumbnail_url)
-                    with open(os.path.join(SAVE_PATH,"szablon.png"),'wb') as f: 
+                    with open(os.path.join(SAVE_PATH,"szablon.jpg"),'wb') as f: 
                         f.write(yt_image.content)
                     # convert audio meta data
                     audiofile = eyed3.load(file_path)
                     if not audiofile.tag:
                         audiofile.initTag()
-                    audiofile.tag.title = yt.title
-                    audiofile.tag.artist = yt._author
-                    audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
-                    audiofile.tag.save()
-                    remove_file(SAVE_PATH,"szablon.png")
+                    #audiofile.tag.title = yt.title
+                    #audiofile.tag.artist = yt._author
+                    #audiofile.tag.images.set(ImageFrame.FRONT_COVER, open('szablon.png','rb').read(), 'image/jpeg')
+                    #audiofile.tag.save()
+                    
+                    #file_path = change_backslashes(file_path)
+                    
+                    tag = ""
+                    try: tag = id3.Tag()    
+                    except:  print("couldnt make id3.Tag()")
+                    
+                    try: tag.parse(file_path)
+                    except: print("couldnt parse filepath to tag")
+                    try:
+                        tag.title = yt.title
+                    except:
+                        print("couldnt switch fileneme of tag")
+                    
+                    try: 
+                        tag.artist = yt.author
+                    except: 
+                        print("couldnt make artist name")
+                    
+                    try:
+                        tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
+                    except:
+                        print("couldnt make an image by using tag")
+                    # this code works the same, for setting image (not after use pyinstaller, coz of string "szablon.png" must be os.path.join(etc...))
+                    #try:
+                    #    with open(os.path.join(SAVE_PATH,"szablon.jpg"), "rb") as cover_art:
+                    #        tag.images.set(3, cover_art.read(), "image/jpeg")
+                    #except:
+                    #    print("couldnt set an image by alternative method" + file_path)
+                     
+                    tag.save(version=eyed3.id3.ID3_V2_3) #version=eyed3.id3.ID3_V2_3
+                    remove_file(SAVE_PATH,"szablon.jpg")
                     # you can see a thumbnail using VLC media player, on windows                
                 except:
                     print("Couldn`t make an image to file "+file_path)
