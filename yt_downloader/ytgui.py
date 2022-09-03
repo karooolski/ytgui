@@ -31,7 +31,7 @@ from moviepy.audio.io.AudioFileClip import * # close
 #from moviepy import *
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
-class DonwloadType: #TODO : To be filled instead global variables
+class DonwnloadType: #TODO : To be filled instead global variables
     download_mp4_audio = 0
     download_mp3_audio = 0
     download_mp3_audio_with_thumbnail = 0
@@ -44,35 +44,49 @@ class DonwloadType: #TODO : To be filled instead global variables
     download_video_LQ = 0
     download_video_playlist_720pMAX = 0
     download_video_playlist_LQ = 0
-        
+    
+    @classmethod
+    def resetValues(self):
+        self.download_mp4_audio = 0
+        self.download_mp3_audio = 0
+        self.download_mp3_audio_with_thumbnail = 0
+        self.download_mp3_audio_playlist = 0
+        self.download_mp3_audio_playlist_with_thumbnails = 0
+        self.download_mp4_audio_playlist = 0
+        self.download_video_1080p = 0
+        self.download_video_1080p_merge = 0  
+        self.download_video_720pMAX = 0
+        self.download_video_LQ = 0
+        self.download_video_playlist_720pMAX = 0
+        self.download_video_playlist_LQ = 0
 
-global download_mp4_audio
-global download_mp3_audio
-global download_mp3_audio_with_thumbnail
-global download_mp3_audio_playlist
-global download_mp3_audio_playlist_with_thumbnails
-global download_mp4_audio_playlist 
-global download_video_1080p
-global download_video_1080p_merge  # download audio && video in 1080p and merge it
-global download_video_720pMAX
-global download_video_LQ
-global download_video_playlist_720pMAX
-global download_video_playlist_LQ
+#global download_mp4_audio
+#global download_mp3_audio
+#global download_mp3_audio_with_thumbnail
+#global download_mp3_audio_playlist
+#global download_mp3_audio_playlist_with_thumbnails
+#global download_mp4_audio_playlist 
+#global download_video_1080p
+#global download_video_1080p_merge  # download audio && video in 1080p and merge it
+#global download_video_720pMAX
+#global download_video_LQ
+#global download_video_playlist_720pMAX
+#global download_video_playlist_LQ
 global currentMode
 currentMode = 2
 
-download_video_1080p = 0
-download_video_1080p_merge = 0
-download_video_720pMAX = 1 
-download_video_LQ = 0
-download_mp4_audio = 0 
-download_mp3_audio = 0
-download_mp3_audio_with_thumbnail = 0 
-download_mp3_audio_playlist = 0
-download_mp3_audio_playlist_with_thumbnails = 0
-download_mp4_audio_playlist = 0
-download_video_playlist_720pMAX = 0 
-download_video_playlist_LQ = 0
+#download_video_1080p = 0
+#download_video_1080p_merge = 0
+#download_video_720pMAX = 1 
+#download_video_LQ = 0
+#download_mp4_audio = 0 
+#download_mp3_audio = 0
+#download_mp3_audio_with_thumbnail = 0 
+#download_mp3_audio_playlist = 0
+#download_mp3_audio_playlist_with_thumbnails = 0
+#download_mp4_audio_playlist = 0
+#download_video_playlist_720pMAX = 0 
+#download_video_playlist_LQ = 0
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
@@ -434,118 +448,122 @@ def playlistOrNot(linkk,confirm):
 # ----------------------------
 
 
-def resetValues():
-    global download_mp4_audio
-    global download_mp3_audio
-    global download_mp3_audio_with_thumbnail
-    global download_mp3_audio_playlist 
-    global download_mp3_audio_playlist_with_thumbnails
-    global download_mp4_audio_playlist 
-    global download_video_720pMAX
-    global download_video_LQ
-    global download_video_playlist_720pMAX
-    global download_video_playlist_LQ   
-    global download_video_1080p
-    global download_video_1080p_merge
-    download_video_1080p = 0
-    download_video_1080p_merge = 0
-    download_video_720pMAX = 0 
-    download_video_LQ = 0
-    download_mp4_audio = 0
-    download_mp3_audio = 0
-    download_mp3_audio_with_thumbnail = 0
-    download_mp3_audio_playlist = 0
-    download_mp3_audio_playlist_with_thumbnails = 0
-    download_mp4_audio_playlist = 0
-    download_video_playlist_720pMAX = 0 
-    download_video_playlist_LQ = 0
+def resetValues(dt: DonwnloadType):
+    #global download_mp4_audio
+    #global download_mp3_audio
+    #global download_mp3_audio_with_thumbnail
+    #global download_mp3_audio_playlist 
+    #global download_mp3_audio_playlist_with_thumbnails
+    #global download_mp4_audio_playlist 
+    #global download_video_720pMAX
+    #global download_video_LQ
+    #global download_video_playlist_720pMAX
+    #global download_video_playlist_LQ   
+    #global download_video_1080p
+    #global download_video_1080p_merge
+    
+    #dt.download_video_1080p = 0
+    #dt.download_video_1080p_merge = 0
+    #dt.download_video_720pMAX = 0 
+    #dt.download_video_LQ = 0
+    #dt.download_mp4_audio = 0
+    #dt.download_mp3_audio = 0
+    #dt.download_mp3_audio_with_thumbnail = 0
+    #dt.download_mp3_audio_playlist = 0
+    #dt.download_mp3_audio_playlist_with_thumbnails = 0
+    #dt.download_mp4_audio_playlist = 0
+    #dt.download_video_playlist_720pMAX = 0 
+    #dt.download_video_playlist_LQ = 0
+    
+    dt.resetValues()
     label_download.configure(background=ASCI_grey,text="You can change wether you want do download video / audio ^",fg=TEXT_collor)
 
 def changeDownladType():
-    global download_mp4_audio
-    global download_mp3_audio
-    global download_mp3_audio_with_thumbnail
-    global download_mp3_audio_playlist 
-    global download_mp3_audio_playlist_with_thumbnails
-    global download_mp4_audio_playlist 
-    global download_video_1080p
-    global download_video_1080p_merge
-    global download_video_720pMAX
-    global download_video_LQ
-    global download_video_playlist_720pMAX
-    global download_video_playlist_LQ   
+    # dt:DownladType is defined in main section
+    #global download_mp4_audio
+    #global download_mp3_audio
+    #global download_mp3_audio_with_thumbnail
+    #global download_mp3_audio_playlist 
+    #global download_mp3_audio_playlist_with_thumbnails
+    #global download_mp4_audio_playlist 
+    #global download_video_1080p
+    #global download_video_1080p_merge
+    #global download_video_720pMAX
+    #global download_video_LQ
+    #global download_video_playlist_720pMAX
+    #global download_video_playlist_LQ   
     global currentMode 
 
     max_modes = 13  # count -1 , the last is a switcher to first mode
     
     if currentMode == 1:
-        resetValues()
-        download_video_720pMAX = 1 
+        resetValues(dt)
+        dt.download_video_720pMAX = 1 
         ButtonAudioVideoDownloadChange.configure(text="1/12 Now you will download video (720p MAX)", command = changeDownladType)
         print("downlading video mode ON (720p MAX)")
 
     if currentMode == 2:
-        resetValues()
-        download_mp3_audio_with_thumbnail = 1
+        resetValues(dt)
+        dt.download_mp3_audio_with_thumbnail = 1
         ButtonAudioVideoDownloadChange.configure(text="2/12 download audio mp3 with thumbnail",command = changeDownladType)
     
     if currentMode == 3:
-        resetValues()
-        download_mp3_audio_playlist_with_thumbnails = 1
+        resetValues(dt)
+        dt.download_mp3_audio_playlist_with_thumbnails = 1
         ButtonAudioVideoDownloadChange.configure(text="3/12 download audio mp3 playlist with thumbnails",command = changeDownladType)
 
     if currentMode == 4: 
-        resetValues()
-        download_mp3_audio = 1
+        resetValues(dt)
+        dt.download_mp3_audio = 1
         ButtonAudioVideoDownloadChange.configure(text="4/12 Now you will download audio (mp3)", command = changeDownladType)
         print("downloading audio mode ON (mp3)")
         
     if currentMode == 5:
-        resetValues()
-        download_mp3_audio_playlist = 1 
+        resetValues(dt)
+        dt.download_mp3_audio_playlist = 1 
         ButtonAudioVideoDownloadChange.configure(text="5/12 Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
         print("downloading audio PLAYLIST mode ON (mp3)")        
 
     if currentMode == 6:
-        resetValues()
-        download_mp4_audio = 1
+        resetValues(dt)
+        dt.download_mp4_audio = 1
         ButtonAudioVideoDownloadChange.configure(text="6/12 Now you will download audio (mp4)", command = changeDownladType)
         print("downloading audio mode ON (mp4)")
 
     if currentMode == 7: 
-        resetValues()
-        download_mp4_audio_playlist = 1
+        resetValues(dt)
+        dt.download_mp4_audio_playlist = 1
         ButtonAudioVideoDownloadChange.configure(text="7/12 Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
         print("downloading audio playlist mode ON (mp4)")
 
     if currentMode == 8: 
-        resetValues()
-        download_video_playlist_720pMAX = 1 
+        resetValues(dt)
+        dt.download_video_playlist_720pMAX = 1 
         ButtonAudioVideoDownloadChange.configure(text="8/12 Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
         print("downloading video playlist in high quality mode ON (720p MAX)")
 
     if currentMode == 9:
-        resetValues()
-        download_video_1080p_merge = 1
+        resetValues(dt)
+        dt.download_video_1080p_merge = 1
         ButtonAudioVideoDownloadChange.configure(text="9/12 download video 1080p and merge with audio",command = changeDownladType)
         label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
         print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
     
     if currentMode == 10:
-        resetValues()
-        download_video_1080p = 1
+        resetValues(dt)
+        dt.download_video_1080p = 1
         ButtonAudioVideoDownloadChange.configure(text="10/12 Now you will download video in 1080p with no Voice", command = changeDownladType)
         print("downloading video 1080p ON (mp4, no sound)")     
 
     if currentMode == 11:
-        resetValues()
-        download_video_LQ = 1
+        resetValues(dt)
+        dt.download_video_LQ = 1
         ButtonAudioVideoDownloadChange.configure(text="11/12 Now you will download video (Lowest quality)", command = changeDownladType)
         print("downlading video mode ON (Lowest Quality)")
 
     if currentMode == 12: 
-        resetValues()
-        download_video_playlist_LQ = 1
+        resetValues(dt)
+        dt.download_video_playlist_LQ = 1
         ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
         print("downloading video playlist in ON (Lowest Quality)")
     
@@ -593,67 +611,67 @@ def buttonActionDownload():
     print("Try download a video")
     print("link: "+link)
     print("SAVE_PATH: "+SAVE_PATH)
-    global download_video_1080p
-    global download_video_1080p_merge
-    global download_video_720pMAX
-    global download_video_LQ
-    global download_mp4_audio
-    global download_mp3_audio_with_thumbnail
-    global download_mp3_audio_playlist
-    global download_mp3_audio_playlist_with_thumbnails
-    global download_mp3_audio
-    global download_mp4_audio_playlist
-    global download_video_playlist_720pMAX
-    global download_video_playlist_LQ
+    #global download_video_1080p
+    #global download_video_1080p_merge
+    #global download_video_720pMAX
+    #global download_video_LQ
+    #global download_mp4_audio
+    #global download_mp3_audio_with_thumbnail
+    #global download_mp3_audio_playlist
+    #global download_mp3_audio_playlist_with_thumbnails
+    #global download_mp3_audio
+    #global download_mp4_audio_playlist
+    #global download_video_playlist_720pMAX
+    #global download_video_playlist_LQ
 
-    print(download_video_720pMAX,
-          " ",download_video_LQ,
-          " ",download_mp4_audio,
-          " ",download_mp4_audio_playlist,
-          " ",download_video_playlist_720pMAX,
-          " ",download_video_playlist_LQ,
-          " ",download_video_1080p,
-          " ",download_mp3_audio,
-          " ",download_mp3_audio_playlist,
-          " ", download_video_1080p_merge,
-          " ",download_mp3_audio_with_thumbnail,
-          " ",download_mp3_audio_playlist_with_thumbnails)
+    print(dt.download_video_720pMAX,
+          " ",dt.download_video_LQ,
+          " ",dt.download_mp4_audio,
+          " ",dt.download_mp4_audio_playlist,
+          " ",dt.download_video_playlist_720pMAX,
+          " ",dt.download_video_playlist_LQ,
+          " ",dt.download_video_1080p,
+          " ",dt.download_mp3_audio,
+          " ",dt.download_mp3_audio_playlist,
+          " ",dt.download_video_1080p_merge,
+          " ",dt.download_mp3_audio_with_thumbnail,
+          " ",dt.download_mp3_audio_playlist_with_thumbnails)
 
-    if download_video_720pMAX == 1:
+    if dt.download_video_720pMAX == 1:
         download_video_720pMAX_f(link,SAVE_PATH)
     
-    if download_video_LQ == 1:
+    if dt.download_video_LQ == 1:
         download_video_LQ_f(link,SAVE_PATH)
     
-    if download_mp4_audio == 1:
+    if dt.download_mp4_audio == 1:
         download_mp4_audio_f(link,SAVE_PATH)
     
-    if download_mp4_audio_playlist == 1:
+    if dt.download_mp4_audio_playlist == 1:
         download_mp4_audio_playlist_f(link,SAVE_PATH)
     
-    if download_video_playlist_720pMAX == 1:
+    if dt.download_video_playlist_720pMAX == 1:
         download_video_playlist_720pMAX_f(link,SAVE_PATH) 
 
-    if download_video_playlist_LQ == 1:
+    if dt.download_video_playlist_LQ == 1:
         download_video_playlist_LQ_f(link,SAVE_PATH)        
     
-    if download_video_1080p == 1:
+    if dt.download_video_1080p == 1:
         link = playlistOrNot(link,"single_video")
         downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
             
-    if download_mp3_audio == 1:
+    if dt.download_mp3_audio == 1:
         download_mp3_audio_f(link,SAVE_PATH)
         
-    if download_mp3_audio_with_thumbnail == 1: 
+    if dt.download_mp3_audio_with_thumbnail == 1: 
         download_mp3_audio_with_thumbnail_f(link,SAVE_PATH)  
  
-    if download_mp3_audio_playlist == 1:
+    if dt.download_mp3_audio_playlist == 1:
         download_mp3_audio_playlist_f(link,SAVE_PATH)
               
-    if download_mp3_audio_playlist_with_thumbnails == 1:
+    if dt.download_mp3_audio_playlist_with_thumbnails == 1:
         download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH)      
         
-    if download_video_1080p_merge == 1:
+    if dt.download_video_1080p_merge == 1:
         downloadVideo_1080p()
         downloadAudioToBeMerged()
         merge_video_with_audio() 
@@ -697,12 +715,14 @@ label_download.pack()
 
 # audio / video change button 
 
+dt = DonwnloadType 
+
 temp_string = ""
-if download_video_720pMAX == 1:
+if dt.download_video_720pMAX == 1:
     temp_string = "video (720p max)"
-if download_video_LQ == 1:
+if dt.download_video_LQ == 1:
     temp_string = "video (Lowest Quality)"
-if download_mp4_audio == 1:
+if dt.download_mp4_audio == 1:
     temp_string = "audio (mp4)"   
 
 
