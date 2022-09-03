@@ -60,40 +60,12 @@ class DonwnloadType: #TODO : To be filled instead global variables
         self.download_video_playlist_720pMAX = 0
         self.download_video_playlist_LQ = 0
 
-#global download_mp4_audio
-#global download_mp3_audio
-#global download_mp3_audio_with_thumbnail
-#global download_mp3_audio_playlist
-#global download_mp3_audio_playlist_with_thumbnails
-#global download_mp4_audio_playlist 
-#global download_video_1080p
-#global download_video_1080p_merge  # download audio && video in 1080p and merge it
-#global download_video_720pMAX
-#global download_video_LQ
-#global download_video_playlist_720pMAX
-#global download_video_playlist_LQ
 global currentMode
 currentMode = 2
-
-#download_video_1080p = 0
-#download_video_1080p_merge = 0
-#download_video_720pMAX = 1 
-#download_video_LQ = 0
-#download_mp4_audio = 0 
-#download_mp3_audio = 0
-#download_mp3_audio_with_thumbnail = 0 
-#download_mp3_audio_playlist = 0
-#download_mp3_audio_playlist_with_thumbnails = 0
-#download_mp4_audio_playlist = 0
-#download_video_playlist_720pMAX = 0 
-#download_video_playlist_LQ = 0
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
 TEXT_warning = "red"
-
-
-
 
 # this program also need '/' slashes in the path like in linux instead "\"
 def change_backslashes(word):
@@ -448,50 +420,12 @@ def playlistOrNot(linkk,confirm):
 # ----------------------------
 
 
-def resetValues(dt: DonwnloadType):
-    #global download_mp4_audio
-    #global download_mp3_audio
-    #global download_mp3_audio_with_thumbnail
-    #global download_mp3_audio_playlist 
-    #global download_mp3_audio_playlist_with_thumbnails
-    #global download_mp4_audio_playlist 
-    #global download_video_720pMAX
-    #global download_video_LQ
-    #global download_video_playlist_720pMAX
-    #global download_video_playlist_LQ   
-    #global download_video_1080p
-    #global download_video_1080p_merge
-    
-    #dt.download_video_1080p = 0
-    #dt.download_video_1080p_merge = 0
-    #dt.download_video_720pMAX = 0 
-    #dt.download_video_LQ = 0
-    #dt.download_mp4_audio = 0
-    #dt.download_mp3_audio = 0
-    #dt.download_mp3_audio_with_thumbnail = 0
-    #dt.download_mp3_audio_playlist = 0
-    #dt.download_mp3_audio_playlist_with_thumbnails = 0
-    #dt.download_mp4_audio_playlist = 0
-    #dt.download_video_playlist_720pMAX = 0 
-    #dt.download_video_playlist_LQ = 0
-    
+def resetValues(dt: DonwnloadType):    
     dt.resetValues()
     label_download.configure(background=ASCI_grey,text="You can change wether you want do download video / audio ^",fg=TEXT_collor)
 
 def changeDownladType():
-    # dt:DownladType is defined in main section
-    #global download_mp4_audio
-    #global download_mp3_audio
-    #global download_mp3_audio_with_thumbnail
-    #global download_mp3_audio_playlist 
-    #global download_mp3_audio_playlist_with_thumbnails
-    #global download_mp4_audio_playlist 
-    #global download_video_1080p
-    #global download_video_1080p_merge
-    #global download_video_720pMAX
-    #global download_video_LQ
-    #global download_video_playlist_720pMAX
-    #global download_video_playlist_LQ   
+    # dt:DownladType is defined in main section 
     global currentMode 
 
     max_modes = 13  # count -1 , the last is a switcher to first mode
@@ -567,12 +501,9 @@ def changeDownladType():
         ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
         print("downloading video playlist in ON (Lowest Quality)")
     
-    
     currentMode += 1 
     if currentMode >= max_modes:
         currentMode = 1 
-
-
 
 # Top level window
 frame = tkinter.Tk()
@@ -581,7 +512,6 @@ frame.geometry('500x350')
 frame.configure(background=ASCI_grey)
 
 myFont = font.Font(family='Helvetica', size=12)
-
 
 global SAVE_PATH
 SAVE_PATH = ""
@@ -611,19 +541,6 @@ def buttonActionDownload():
     print("Try download a video")
     print("link: "+link)
     print("SAVE_PATH: "+SAVE_PATH)
-    #global download_video_1080p
-    #global download_video_1080p_merge
-    #global download_video_720pMAX
-    #global download_video_LQ
-    #global download_mp4_audio
-    #global download_mp3_audio_with_thumbnail
-    #global download_mp3_audio_playlist
-    #global download_mp3_audio_playlist_with_thumbnails
-    #global download_mp3_audio
-    #global download_mp4_audio_playlist
-    #global download_video_playlist_720pMAX
-    #global download_video_playlist_LQ
-
     print(dt.download_video_720pMAX,
           " ",dt.download_video_LQ,
           " ",dt.download_mp4_audio,
@@ -724,8 +641,6 @@ if dt.download_video_LQ == 1:
     temp_string = "video (Lowest Quality)"
 if dt.download_mp4_audio == 1:
     temp_string = "audio (mp4)"   
-
-
 
 ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
 ButtonAudioVideoDownloadChange['font'] = myFont
