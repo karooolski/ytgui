@@ -1,18 +1,23 @@
+# GUI -------------------------------------
 import tkinter
 from tkinter import ttk
-from turtle import color
+from tkinter import messagebox, filedialog
 import tkinter.font as font
+#from tkinter import set
+#from tkinter import *
+#from turtle import color, position
+# PYTUBE API ------------------------------
 from pytube import Playlist
 from pytube import YouTube 
 from pytube.cli import on_progress #this module contains the built in progress bar. 
+# System -------------------------------------------------
 import time
 import os
 from datetime import datetime
 import colorama
 from colorama import Fore
-import ffmpeg
-
 import requests
+# EDIT METADATA of the file -----------------------------
 import eyed3
 from eyed3.id3.frames import ImageFrame
 from eyed3.id3 import tag
@@ -21,7 +26,9 @@ import eyed3.id3 as id3
 #from moviepy import *
 #import eyed3.mp3.Mp3AudioFile #- For mp3 audio files.
 #import eyed3.id3.TagFile #- For raw ID3 data files
-
+# Convert 1080p (no-voice) with mp3 ---------------------
+import ffmpeg
+# Convert mp4 -> mp3 ------------------------------------
 from moviepy.audio.io import AudioFileClip
 from moviepy.audio.AudioClip import *  # write_audiofile
 from moviepy.audio.io.AudioFileClip import * # close
@@ -520,27 +527,21 @@ link = ""
 
 def enableDownloadButton():
     if printButtonDownload["state"] == "disabled":
-        printButtonDownload["state"] = "normal" #active
+        printButtonDownload["state"] = "normal" #other options: active
 
 def buttonActionConfirmThePath():
-    input = textBoxPath.get(1.0, "end-1c")
     global SAVE_PATH
-    SAVE_PATH = input
+    SAVE_PATH = textBoxPath.get(1.0, "end-1c")
     SAVE_PATH = change_backslashes(SAVE_PATH)
-    labelPath.config(text = "Provided Input: "+input)
-    print(input)
+    labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
     
 def buttonActionDownload():
-    input = textBoxDownload.get(1.0, "end-1c")
     global SAVE_PATH
     global link 
-    link = input
-    label_download.config(text = "Provided Input: "+input)  
-    print(input)
-    print("Try download a video")
-    print("link: "+link)
-    print("SAVE_PATH: "+SAVE_PATH)
+    link = textBoxDownload.get(1.0, "end-1c")
+    label_download.config(text = "Provided Input: "+link)  
+    print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
     print(dt.download_video_720pMAX,
           " ",dt.download_video_LQ,
           " ",dt.download_mp4_audio,
@@ -592,10 +593,21 @@ def buttonActionDownload():
         downloadVideo_1080p()
         downloadAudioToBeMerged()
         merge_video_with_audio() 
-       
-    #print('Finished working!') 
+
     print(time_now(),' Finished working!') 
 
+
+#def browse(): # not working 
+#    global SAVE_PATH
+#    try:
+#        download = filedialog.askdirectory(initialdir="YOUR DIRECTORY PATH", title="Save Video")
+#        SAVE_PATH = download
+#        SAVE_PATH = change_backslashes(SAVE_PATH) # for windows usage 
+#        textBoxPath.configure(text=str(SAVE_PATH))
+#        print(SAVE_PATH)
+#    except:
+#        print("ygui: Browse (function) error!")
+        
 # -------|
 # # Main |
 # -------|
@@ -609,28 +621,57 @@ def buttonActionDownload():
 
 print(time_now())
 
+
+# textbox for the path ----------------------
+
+
 textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
 textBoxPath.pack()
 # Button Creation
+
+# Button to confirm tha path ----------------
+
 printButtonPath = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
 printButtonPath['font'] = myFont
 printButtonPath.pack()
 # Label Creation
+#browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
+#browse_B.pack()
+#browse_B.grid(row=3,
+#              column=2,
+#              pady=1,
+#              padx=1)
+
+# Browse Button TODO -----------------------
+
+#browseButton = tkinter.Button(frame,text="browse",command=browse)
+#browseButton.pack()
+
+# Label with info <enetering the path> ------
+
 labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=ASCI_grey,fg=TEXT_collor)
 labelPath['font'] = myFont
 labelPath.pack()
 
+# Textbox for the link ----------------------
+
 textBoxDownload = tkinter.Text(frame,height = 5,width = 20)  
 textBoxDownload.pack()
+
+# Button to confirm download ----------------
+
 printButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = buttonActionDownload)
 printButtonDownload.pack()
 printButtonDownload["state"] = "disabled"  # button is disabled at start 
 printButtonDownload['font'] = myFont
+
+# Label with info for the <confirm the path>
+
 label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=ASCI_grey,fg=TEXT_collor)
 label_download['font'] = myFont
 label_download.pack()
 
-# audio / video change button 
+# audio / video change button ----------------
 
 dt = DonwnloadType 
 
@@ -645,6 +686,9 @@ if dt.download_mp4_audio == 1:
 ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
 ButtonAudioVideoDownloadChange['font'] = myFont
 ButtonAudioVideoDownloadChange.pack()
+
+# Label with info for the button above ------
+
 label_audioVideoChange = tkinter.Label(frame,text="You can change wether you want do download video / audio ^", background=ASCI_grey,fg=TEXT_collor)
 label_audioVideoChange['font'] = myFont
 label_audioVideoChange.pack()
