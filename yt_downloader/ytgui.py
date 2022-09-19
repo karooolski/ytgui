@@ -1,23 +1,20 @@
 # GUI -------------------------------------
 import tkinter
 from tkinter import ttk
-from tkinter import messagebox, filedialog
+#from tkinter import messagebox, filedialog # TODO may be useful in the future
 import tkinter.font as font
 # PYTUBE API ------------------------------
 from pytube import Playlist
 from pytube import YouTube 
 from pytube.cli import on_progress #this module contains the built in progress bar. 
 # System -------------------------------------------------
-import time
 import os
 from datetime import datetime
-import colorama
-from colorama import Fore
 import requests
 # EDIT METADATA of the file -----------------------------
 import eyed3
 from eyed3.id3.frames import ImageFrame
-from eyed3.id3 import tag
+#from eyed3.id3 import tag
 import eyed3.id3 as id3
 
 # Convert video 1080p (no-voice) with audio ---------------------
@@ -47,39 +44,16 @@ class DownloadType:
         "video playlist (Lowest quality)"
     ]
 
+# # GUI options 
+#---------------
+
 ASCI_grey = "#808080"
+dark_cyan = "#308080"
+main_collor = dark_cyan
 TEXT_collor = "white"
 TEXT_warning = "red"
-
-# this program also need '/' slashes in the path like in linux instead "\"
-def change_backslashes(word):
-    ex = '\\'
-    l = list(word)
-    for i in range(len(word)):
-        #w = print(word[i])
-        if l[i] == ex:
-            l[i] = '/'
-        s = ''.join(l)
-    return(s)
-
-def change_backslashes_to_windows_type(word):
-    ex = '/'
-    l = list(word)
-    for i in range(len(word)):
-        #w = print(word[i])
-        if l[i] == ex:
-            l[i] = '\\'
-        s = ''.join(l)
-    return(s)
-
-def stringReplace(word,toReplace,replacement):
-    ex = toReplace
-    l = list(word)
-    for i in range(len(word)):
-        if l[i] == ex:
-            l[i] = replacement
-        s = ''.join(l)
-    return(s)
+gui_font = 'Helvetica'
+gui_font_size = 15
 
 # # Download Functions : Audios 
 # -----------------------------
@@ -173,11 +147,11 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
     try:
     # Download a video and debug progress
         if file_type == "mp4":
-            video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+            audio = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
         else:
-            video = yt.streams.filter(only_audio=True).get_audio_only()
-        video.download(downloads_path)
-        return video
+            audio = yt.streams.filter(only_audio=True).get_audio_only() # it is mp4 too
+        audio.download(downloads_path)
+        return audio # returning audiofile (mp4) to be converted to mp3 
     except: 
         print("download video (function) error!")
 
@@ -349,12 +323,12 @@ def remove_file(location,filename):
 # Usage: download video in 1080p and merge with audio
 def merge_video_with_audio():
     try:
-        input_audio_path  = SAVE_PATH+'/'+"videomerge.mp4"
-        input_video_path  = SAVE_PATH+'/'+"audiomerge.mp4"
-        output_video_path = SAVE_PATH+"/"+"output"+".mp4"
-        video = ffmpeg.input(input_video_path)
-        audio = ffmpeg.input(input_audio_path)
-        ffmpeg.output(audio, video,output_video_path).run(overwrite_output=True)
+        audio_path  = SAVE_PATH+'/'+"videomerge.mp4"
+        video_path  = SAVE_PATH+'/'+"audiomerge.mp4"
+        merged_video_path = SAVE_PATH+"/"+"output"+".mp4"
+        video = ffmpeg.input(video_path)
+        audio = ffmpeg.input(audio_path)
+        ffmpeg.output(audio, video,merged_video_path).run(overwrite_output=True)
         remove_file(SAVE_PATH,"videomerge.mp4")
         remove_file(SAVE_PATH,"audiomerge.mp4")
         print("Merge ended successfully")
@@ -382,6 +356,36 @@ def convert_to_mp3_with_metadata(file_path: str) -> str:
 
 # # inside functions 
 # -------------------
+
+# this program also need '/' slashes in the path like in linux instead "\"
+def change_backslashes(word):
+    ex = '\\'
+    l = list(word)
+    for i in range(len(word)):
+        #w = print(word[i])
+        if l[i] == ex:
+            l[i] = '/'
+        s = ''.join(l)
+    return(s)
+
+def change_backslashes_to_windows_type(word):
+    ex = '/'
+    l = list(word)
+    for i in range(len(word)):
+        #w = print(word[i])
+        if l[i] == ex:
+            l[i] = '\\'
+        s = ''.join(l)
+    return(s)
+
+def stringReplace(word,toReplace,replacement):
+    ex = toReplace
+    l = list(word)
+    for i in range(len(word)):
+        if l[i] == ex:
+            l[i] = replacement
+        s = ''.join(l)
+    return(s)
 
 def time_now():
     now =  datetime.now()
@@ -419,12 +423,11 @@ def buttonActionConfirmThePath():
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
     
-    
 def startDownloading():
     global link 
     global SAVE_PATH
     link = textBoxDownloadLink.get(1.0, "end-1c")
-    label_download.config(text = "Provided Input: "+link)  
+    #label_download.config(text = "Provided Input: "+link)  
     chosen_plan = Combobox.get()
     print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
     
@@ -488,14 +491,13 @@ link = ""
 
 print(time_now())
 
-
 # Top level window -------------------------
 
 frame = tkinter.Tk()
 frame.title("YouTube Audio / Video Downloader")
 frame.geometry('500x350')
-frame.configure(background=ASCI_grey)
-myFont = font.Font(family='Helvetica', size=12)
+frame.configure(background=main_collor)
+myFont = font.Font(family=gui_font, size=gui_font_size)
 
 # textbox for the path ----------------------
 
@@ -504,7 +506,7 @@ textBoxPath.pack()
 
 # Label with info <enetering the path> ------
 
-labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=ASCI_grey,fg=TEXT_collor)
+labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=main_collor,fg=TEXT_collor)
 labelPath['font'] = myFont
 labelPath.pack()
 
@@ -536,7 +538,7 @@ textBoxDownloadLink.pack()
 
 # Label with info for the <confirm the path>
 
-label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=ASCI_grey,fg=TEXT_collor)
+label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
 label_download['font'] = myFont
 label_download.pack()
 
@@ -547,7 +549,7 @@ ButtonDownload.pack()
 ButtonDownload["state"] = "disabled"  # button is disabled at start 
 ButtonDownload['font'] = myFont
 
-# Combobox ------------------------
+# Combobox to choose an option of download---
 
 dtt = DownloadType
 Combobox=ttk.Combobox(frame,values=dtt.downloadTypes,width=30,state = "readonly",font=myFont)
