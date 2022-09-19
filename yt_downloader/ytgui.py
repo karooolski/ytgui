@@ -38,6 +38,26 @@ from moviepy.audio.io.AudioFileClip import * # close
 #from moviepy import *
 #https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
 
+class downloadType:
+    pizza = ""
+    nalesniki = ""
+    #course=["Pizza","Burger","Noodles","pierogi","schabowe","dobre_wedzone","piwo","woda","garnitur","kapsel","brukselka","jeczmien",
+    #   "obwarzany","stokrotkowitowiczonawodniczywniczyrzyc"]
+    course = [
+        "video 720p MAX",
+        "audio mp3 with thumbnail",
+        "audio mp3 playlist with thumbnails",
+        "audio mp3",
+        "audio playlist mp3",
+        "audio mp4",
+        "audio playlist mp4",
+        "video playlist 720p MAX",
+        "video 1080p and merge with audio",
+        "video in 1080p with no Voice",
+        "video (Lowest quality)",
+        "video playlist (Lowest quality)"
+    ]
+
 class DonwnloadType: #TODO : To be filled instead global variables
     download_mp4_audio = 0
     download_mp3_audio = 0
@@ -157,7 +177,8 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
     global title       # variable for merge and rename purposes
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
-        yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audio.mp3")
+        #yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audiocbd")
+        yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
     except: 
         print("Download audio failed")
@@ -183,10 +204,10 @@ def download_mp3_audio_f(link,SAVE_PATH):
 # -----------------------------
 
 # Usage: download video in 1080p and merge with audio
-def downloadVideo_1080p(link,SAVE_PATH):   #download video only
+def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
-        yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="video.mp4")
+        yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
         print("Download video failed")    
 
@@ -371,11 +392,15 @@ def remove_file(location,filename):
 # Usage: download video in 1080p and merge with audio
 def merge_video_with_audio():
     try:
-        video = ffmpeg.input("video.mp4")
-        audio = ffmpeg.input("audio.mp3")
-        ffmpeg.output(audio, video, title+".mp4").run(overwrite_output=True)
-        remove_file(SAVE_PATH,"video.mp4")
-        remove_file(SAVE_PATH,"audio.mp3")
+        input_audio_path = SAVE_PATH+'/'+"videomerge.mp4"
+        input_video_path = SAVE_PATH+'/'+"audiomerge.mp4"
+        output_video_path = SAVE_PATH+"/"+"output"+".mp4"
+        video = ffmpeg.input(input_video_path)
+        audio = ffmpeg.input(input_audio_path)
+        ffmpeg.output(audio, video,output_video_path).run(overwrite_output=True)
+        remove_file(SAVE_PATH,"videomerge.mp4")
+        remove_file(SAVE_PATH,"audiomerge.mp4")
+        print("Merge ended successfully")
     except:
         print("Merge failed")
 
@@ -431,86 +456,86 @@ def resetValues(dt: DonwnloadType):
     dt.resetValues()
     label_download.configure(background=ASCI_grey,text="You can change wether you want do download video / audio ^",fg=TEXT_collor)
 
-def changeDownladType():
-    # dt:DownladType is defined in main section 
-    global currentMode 
-
-    max_modes = 13  # count -1 , the last is a switcher to first mode
-    
-    if currentMode == 1:
-        resetValues(dt)
-        dt.download_video_720pMAX = 1 
-        ButtonAudioVideoDownloadChange.configure(text="1/12 Now you will download video (720p MAX)", command = changeDownladType)
-        print("downlading video mode ON (720p MAX)")
-
-    if currentMode == 2:
-        resetValues(dt)
-        dt.download_mp3_audio_with_thumbnail = 1
-        ButtonAudioVideoDownloadChange.configure(text="2/12 download audio mp3 with thumbnail",command = changeDownladType)
-    
-    if currentMode == 3:
-        resetValues(dt)
-        dt.download_mp3_audio_playlist_with_thumbnails = 1
-        ButtonAudioVideoDownloadChange.configure(text="3/12 download audio mp3 playlist with thumbnails",command = changeDownladType)
-
-    if currentMode == 4: 
-        resetValues(dt)
-        dt.download_mp3_audio = 1
-        ButtonAudioVideoDownloadChange.configure(text="4/12 Now you will download audio (mp3)", command = changeDownladType)
-        print("downloading audio mode ON (mp3)")
-        
-    if currentMode == 5:
-        resetValues(dt)
-        dt.download_mp3_audio_playlist = 1 
-        ButtonAudioVideoDownloadChange.configure(text="5/12 Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
-        print("downloading audio PLAYLIST mode ON (mp3)")        
-
-    if currentMode == 6:
-        resetValues(dt)
-        dt.download_mp4_audio = 1
-        ButtonAudioVideoDownloadChange.configure(text="6/12 Now you will download audio (mp4)", command = changeDownladType)
-        print("downloading audio mode ON (mp4)")
-
-    if currentMode == 7: 
-        resetValues(dt)
-        dt.download_mp4_audio_playlist = 1
-        ButtonAudioVideoDownloadChange.configure(text="7/12 Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
-        print("downloading audio playlist mode ON (mp4)")
-
-    if currentMode == 8: 
-        resetValues(dt)
-        dt.download_video_playlist_720pMAX = 1 
-        ButtonAudioVideoDownloadChange.configure(text="8/12 Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
-        print("downloading video playlist in high quality mode ON (720p MAX)")
-
-    if currentMode == 9:
-        resetValues(dt)
-        dt.download_video_1080p_merge = 1
-        ButtonAudioVideoDownloadChange.configure(text="9/12 download video 1080p and merge with audio",command = changeDownladType)
-        label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
-        print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
-    
-    if currentMode == 10:
-        resetValues(dt)
-        dt.download_video_1080p = 1
-        ButtonAudioVideoDownloadChange.configure(text="10/12 Now you will download video in 1080p with no Voice", command = changeDownladType)
-        print("downloading video 1080p ON (mp4, no sound)")     
-
-    if currentMode == 11:
-        resetValues(dt)
-        dt.download_video_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="11/12 Now you will download video (Lowest quality)", command = changeDownladType)
-        print("downlading video mode ON (Lowest Quality)")
-
-    if currentMode == 12: 
-        resetValues(dt)
-        dt.download_video_playlist_LQ = 1
-        ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
-        print("downloading video playlist in ON (Lowest Quality)")
-    
-    currentMode += 1 
-    if currentMode >= max_modes:
-        currentMode = 1 
+#def changeDownladType():
+#    # dt:DownladType is defined in main section 
+#    global currentMode 
+#
+#    max_modes = 13  # count -1 , the last is a switcher to first mode
+#    
+#    if currentMode == 1:
+#        resetValues(dt)
+#        dt.download_video_720pMAX = 1 
+#        ButtonAudioVideoDownloadChange.configure(text="1/12 Now you will download video (720p MAX)", command = changeDownladType)
+#        print("downlading video mode ON (720p MAX)")
+#
+#    if currentMode == 2:
+#        resetValues(dt)
+#        dt.download_mp3_audio_with_thumbnail = 1
+#        ButtonAudioVideoDownloadChange.configure(text="2/12 download audio mp3 with thumbnail",command = changeDownladType)
+#    
+#    if currentMode == 3:
+#        resetValues(dt)
+#        dt.download_mp3_audio_playlist_with_thumbnails = 1
+#        ButtonAudioVideoDownloadChange.configure(text="3/12 download audio mp3 playlist with thumbnails",command = changeDownladType)
+#
+#    if currentMode == 4: 
+#        resetValues(dt)
+#        dt.download_mp3_audio = 1
+#        ButtonAudioVideoDownloadChange.configure(text="4/12 Now you will download audio (mp3)", command = changeDownladType)
+#        print("downloading audio mode ON (mp3)")
+#        
+#    if currentMode == 5:
+#        resetValues(dt)
+#        dt.download_mp3_audio_playlist = 1 
+#        ButtonAudioVideoDownloadChange.configure(text="5/12 Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
+#        print("downloading audio PLAYLIST mode ON (mp3)")        
+#
+#    if currentMode == 6:
+#        resetValues(dt)
+#        dt.download_mp4_audio = 1
+#        ButtonAudioVideoDownloadChange.configure(text="6/12 Now you will download audio (mp4)", command = changeDownladType)
+#        print("downloading audio mode ON (mp4)")
+#
+#    if currentMode == 7: 
+#        resetValues(dt)
+#        dt.download_mp4_audio_playlist = 1
+#        ButtonAudioVideoDownloadChange.configure(text="7/12 Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
+#        print("downloading audio playlist mode ON (mp4)")
+#
+#    if currentMode == 8: 
+#        resetValues(dt)
+#        dt.download_video_playlist_720pMAX = 1 
+#        ButtonAudioVideoDownloadChange.configure(text="8/12 Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
+#        print("downloading video playlist in high quality mode ON (720p MAX)")
+#
+#    if currentMode == 9:
+#        resetValues(dt)
+#        dt.download_video_1080p_merge = 1
+#        ButtonAudioVideoDownloadChange.configure(text="9/12 download video 1080p and merge with audio",command = changeDownladType)
+#        label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
+#        print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
+#    
+#    if currentMode == 10:
+#        resetValues(dt)
+#        dt.download_video_1080p = 1
+#        ButtonAudioVideoDownloadChange.configure(text="10/12 Now you will download video in 1080p with no Voice", command = changeDownladType)
+#        print("downloading video 1080p ON (mp4, no sound)")     
+#
+#    if currentMode == 11:
+#        resetValues(dt)
+#        dt.download_video_LQ = 1
+#        ButtonAudioVideoDownloadChange.configure(text="11/12 Now you will download video (Lowest quality)", command = changeDownladType)
+#        print("downlading video mode ON (Lowest Quality)")
+#
+#    if currentMode == 12: 
+#        resetValues(dt)
+#        dt.download_video_playlist_LQ = 1
+#        ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
+#        print("downloading video playlist in ON (Lowest Quality)")
+#    
+#    currentMode += 1 
+#    if currentMode >= max_modes:
+#        currentMode = 1 
 
 # Top level window
 frame = tkinter.Tk()
@@ -526,8 +551,8 @@ global link
 link = ""
 
 def enableDownloadButton():
-    if printButtonDownload["state"] == "disabled":
-        printButtonDownload["state"] = "normal" #other options: active
+    if ButtonDownload["state"] == "disabled":
+        ButtonDownload["state"] = "normal" #other options: active
 
 def buttonActionConfirmThePath():
     global SAVE_PATH
@@ -536,66 +561,111 @@ def buttonActionConfirmThePath():
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
     
-def buttonActionDownload():
-    global SAVE_PATH
+#def buttonActionDownload():
+#    global SAVE_PATH
+#    global link 
+#    link = textBoxDownload.get(1.0, "end-1c")
+#    label_download.config(text = "Provided Input: "+link)  
+#    print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
+#    print(dt.download_video_720pMAX,
+#          " ",dt.download_video_LQ,
+#          " ",dt.download_mp4_audio,
+#          " ",dt.download_mp4_audio_playlist,
+#          " ",dt.download_video_playlist_720pMAX,
+#          " ",dt.download_video_playlist_LQ,
+#          " ",dt.download_video_1080p,
+#          " ",dt.download_mp3_audio,
+#          " ",dt.download_mp3_audio_playlist,
+#          " ",dt.download_video_1080p_merge,
+#          " ",dt.download_mp3_audio_with_thumbnail,
+#          " ",dt.download_mp3_audio_playlist_with_thumbnails)
+#
+#    if dt.download_video_720pMAX == 1:
+#        download_video_720pMAX_f(link,SAVE_PATH)
+#    
+#    if dt.download_video_LQ == 1:
+#        download_video_LQ_f(link,SAVE_PATH)
+#    
+#    if dt.download_mp4_audio == 1:
+#        download_mp4_audio_f(link,SAVE_PATH)
+#    
+#    if dt.download_mp4_audio_playlist == 1:
+#        download_mp4_audio_playlist_f(link,SAVE_PATH)
+#    
+#    if dt.download_video_playlist_720pMAX == 1:
+#        download_video_playlist_720pMAX_f(link,SAVE_PATH) 
+#
+#    if dt.download_video_playlist_LQ == 1:
+#        download_video_playlist_LQ_f(link,SAVE_PATH)        
+#    
+#    if dt.download_video_1080p == 1:
+#        link = playlistOrNot(link,"single_video")
+#        downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
+#            
+#    if dt.download_mp3_audio == 1:
+#        download_mp3_audio_f(link,SAVE_PATH)
+#        
+#    if dt.download_mp3_audio_with_thumbnail == 1: 
+#        download_mp3_audio_with_thumbnail_f(link,SAVE_PATH)  
+# 
+#    if dt.download_mp3_audio_playlist == 1:
+#        download_mp3_audio_playlist_f(link,SAVE_PATH)
+#              
+#    if dt.download_mp3_audio_playlist_with_thumbnails == 1:
+#        download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH)      
+#        
+#    if dt.download_video_1080p_merge == 1:
+#        downloadVideo_1080p()
+#        downloadAudioToBeMerged()
+#        merge_video_with_audio() 
+#
+#    print(time_now(),' Finished working!') 
+
+def startDownloading():
     global link 
+    global SAVE_PATH
     link = textBoxDownload.get(1.0, "end-1c")
     label_download.config(text = "Provided Input: "+link)  
+    chosen_plan = cmb.get()
     print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
-    print(dt.download_video_720pMAX,
-          " ",dt.download_video_LQ,
-          " ",dt.download_mp4_audio,
-          " ",dt.download_mp4_audio_playlist,
-          " ",dt.download_video_playlist_720pMAX,
-          " ",dt.download_video_playlist_LQ,
-          " ",dt.download_video_1080p,
-          " ",dt.download_mp3_audio,
-          " ",dt.download_mp3_audio_playlist,
-          " ",dt.download_video_1080p_merge,
-          " ",dt.download_mp3_audio_with_thumbnail,
-          " ",dt.download_mp3_audio_playlist_with_thumbnails)
-
-    if dt.download_video_720pMAX == 1:
+    
+    if chosen_plan == "video 720p MAX":
         download_video_720pMAX_f(link,SAVE_PATH)
-    
-    if dt.download_video_LQ == 1:
-        download_video_LQ_f(link,SAVE_PATH)
-    
-    if dt.download_mp4_audio == 1:
-        download_mp4_audio_f(link,SAVE_PATH)
-    
-    if dt.download_mp4_audio_playlist == 1:
-        download_mp4_audio_playlist_f(link,SAVE_PATH)
-    
-    if dt.download_video_playlist_720pMAX == 1:
-        download_video_playlist_720pMAX_f(link,SAVE_PATH) 
-
-    if dt.download_video_playlist_LQ == 1:
-        download_video_playlist_LQ_f(link,SAVE_PATH)        
-    
-    if dt.download_video_1080p == 1:
-        link = playlistOrNot(link,"single_video")
-        downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
             
-    if dt.download_mp3_audio == 1:
+    if chosen_plan == "audio mp3 with thumbnail":
+        download_mp3_audio_with_thumbnail_f(link,SAVE_PATH) 
+        
+    if chosen_plan == "audio mp3 playlist with thumbnails":
+        download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH) 
+         
+    if chosen_plan == "audio mp3":
         download_mp3_audio_f(link,SAVE_PATH)
+         
+    if chosen_plan == "audio playlist mp3":
+         download_mp3_audio_playlist_f(link,SAVE_PATH)
+         
+    if chosen_plan == "audio mp4":
+         download_mp4_audio_f(link,SAVE_PATH)
+         
+    if chosen_plan == "audio playlist mp4":
+        download_mp4_audio_playlist_f(link,SAVE_PATH)
+         
+    if chosen_plan == "video playlist 720p MAX":
+        download_video_playlist_720pMAX_f(link,SAVE_PATH)
         
-    if dt.download_mp3_audio_with_thumbnail == 1: 
-        download_mp3_audio_with_thumbnail_f(link,SAVE_PATH)  
- 
-    if dt.download_mp3_audio_playlist == 1:
-        download_mp3_audio_playlist_f(link,SAVE_PATH)
-              
-    if dt.download_mp3_audio_playlist_with_thumbnails == 1:
-        download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH)      
+    if chosen_plan == "video 1080p and merge with audio":
+        downloadVideo_1080p_toBeMerged(link,SAVE_PATH)
+        downloadAudioToBeMerged(link,SAVE_PATH)
+        merge_video_with_audio()
+       
+    if chosen_plan == "video in 1080p with no Voice":
+        downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
         
-    if dt.download_video_1080p_merge == 1:
-        downloadVideo_1080p()
-        downloadAudioToBeMerged()
-        merge_video_with_audio() 
-
-    print(time_now(),' Finished working!') 
-
+    if chosen_plan == "video (Lowest quality)":
+        download_video_LQ_f(link,SAVE_PATH)
+        
+    if chosen_plan == "video playlist (Lowest quality)":
+        download_video_playlist_LQ_f(link,SAVE_PATH) 
 
 #def browse(): # not working 
 #    global SAVE_PATH
@@ -624,16 +694,22 @@ print(time_now())
 
 # textbox for the path ----------------------
 
-
 textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
 textBoxPath.pack()
+
+# Label with info <enetering the path> ------
+
+labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=ASCI_grey,fg=TEXT_collor)
+labelPath['font'] = myFont
+labelPath.pack()
+
 # Button Creation
 
 # Button to confirm tha path ----------------
 
-printButtonPath = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
-printButtonPath['font'] = myFont
-printButtonPath.pack()
+ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
+ButtonPathConfirm['font'] = myFont
+ButtonPathConfirm.pack()
 # Label Creation
 #browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
 #browse_B.pack()
@@ -647,23 +723,10 @@ printButtonPath.pack()
 #browseButton = tkinter.Button(frame,text="browse",command=browse)
 #browseButton.pack()
 
-# Label with info <enetering the path> ------
-
-labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=ASCI_grey,fg=TEXT_collor)
-labelPath['font'] = myFont
-labelPath.pack()
-
 # Textbox for the link ----------------------
 
 textBoxDownload = tkinter.Text(frame,height = 5,width = 20)  
 textBoxDownload.pack()
-
-# Button to confirm download ----------------
-
-printButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = buttonActionDownload)
-printButtonDownload.pack()
-printButtonDownload["state"] = "disabled"  # button is disabled at start 
-printButtonDownload['font'] = myFont
 
 # Label with info for the <confirm the path>
 
@@ -671,26 +734,47 @@ label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", backgro
 label_download['font'] = myFont
 label_download.pack()
 
+# Button to confirm download ----------------
+
+ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = startDownloading ) #buttonActionDownload
+ButtonDownload.pack()
+ButtonDownload["state"] = "disabled"  # button is disabled at start 
+ButtonDownload['font'] = myFont
+
+# Combobox ------------------------
+
+dtt = downloadType
+cmb=ttk.Combobox(frame,values=dtt.course,width=30,state = "readonly",font=myFont)
+cmb.current(0) # show first option 
+frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
+cmb.pack()
+
 # audio / video change button ----------------
 
-dt = DonwnloadType 
+#dt = DonwnloadType 
+#
+#temp_string = ""
+#if dt.download_video_720pMAX == 1:
+#    temp_string = "video (720p max)"
+#if dt.download_video_LQ == 1:
+#    temp_string = "video (Lowest Quality)"
+#if dt.download_mp4_audio == 1:
+#    temp_string = "audio (mp4)"   
+#
+#ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
+#ButtonAudioVideoDownloadChange['font'] = myFont
+#ButtonAudioVideoDownloadChange.pack()
 
-temp_string = ""
-if dt.download_video_720pMAX == 1:
-    temp_string = "video (720p max)"
-if dt.download_video_LQ == 1:
-    temp_string = "video (Lowest Quality)"
-if dt.download_mp4_audio == 1:
-    temp_string = "audio (mp4)"   
+# Download Button ----------------
 
-ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
-ButtonAudioVideoDownloadChange['font'] = myFont
-ButtonAudioVideoDownloadChange.pack()
+#ButtonDownload = tkinter.Button(frame, text="Download", command = startDownloading)
+#ButtonDownload['font'] = myFont
+#ButtonDownload.pack()
 
 # Label with info for the button above ------
 
-label_audioVideoChange = tkinter.Label(frame,text="You can change wether you want do download video / audio ^", background=ASCI_grey,fg=TEXT_collor)
-label_audioVideoChange['font'] = myFont
-label_audioVideoChange.pack()
+#label_audioVideoChange = tkinter.Label(frame,text="You can change wether you want do download video / audio ^", background=ASCI_grey,fg=TEXT_collor)
+#label_audioVideoChange['font'] = myFont
+#label_audioVideoChange.pack()
 
 frame.mainloop()
