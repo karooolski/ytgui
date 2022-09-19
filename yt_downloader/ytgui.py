@@ -3,9 +3,6 @@ import tkinter
 from tkinter import ttk
 from tkinter import messagebox, filedialog
 import tkinter.font as font
-#from tkinter import set
-#from tkinter import *
-#from turtle import color, position
 # PYTUBE API ------------------------------
 from pytube import Playlist
 from pytube import YouTube 
@@ -22,28 +19,20 @@ import eyed3
 from eyed3.id3.frames import ImageFrame
 from eyed3.id3 import tag
 import eyed3.id3 as id3
-##from eyed3.core import Tag
-#from moviepy import *
-#import eyed3.mp3.Mp3AudioFile #- For mp3 audio files.
-#import eyed3.id3.TagFile #- For raw ID3 data files
-# Convert 1080p (no-voice) with mp3 ---------------------
+
+# Convert video 1080p (no-voice) with audio ---------------------
 import ffmpeg
+# + pip install ffmpeg-python 
+# + download GPL version of ffmpeg from https://github.com/BtbN/FFmpeg-Builds/releases and paste an '.exe' file in the project 
+# + on windows add bin folder path of downlaoded GPL version to the PATH in global variables
+
 # Convert mp4 -> mp3 ------------------------------------
 from moviepy.audio.io import AudioFileClip
 from moviepy.audio.AudioClip import *  # write_audiofile
 from moviepy.audio.io.AudioFileClip import * # close
 
-#from moviepy.editor import AudioFileClip # pyinstaller zadziala ale nie zrobi mp3
-#from moviepy.audio.io import AudioFileClip # earlier: from moviepy.editor import AudioFileClip
-#from moviepy import *
-#https://www.geeksforgeeks.org/how-to-get-the-input-from-tkinter-text-box/
-
-class downloadType:
-    pizza = ""
-    nalesniki = ""
-    #course=["Pizza","Burger","Noodles","pierogi","schabowe","dobre_wedzone","piwo","woda","garnitur","kapsel","brukselka","jeczmien",
-    #   "obwarzany","stokrotkowitowiczonawodniczywniczyrzyc"]
-    course = [
+class DownloadType:
+    downloadTypes = [
         "video 720p MAX",
         "audio mp3 with thumbnail",
         "audio mp3 playlist with thumbnails",
@@ -57,38 +46,6 @@ class downloadType:
         "video (Lowest quality)",
         "video playlist (Lowest quality)"
     ]
-
-class DonwnloadType: #TODO : To be filled instead global variables
-    download_mp4_audio = 0
-    download_mp3_audio = 0
-    download_mp3_audio_with_thumbnail = 0
-    download_mp3_audio_playlist = 0
-    download_mp3_audio_playlist_with_thumbnails = 0
-    download_mp4_audio_playlist = 0
-    download_video_1080p = 0
-    download_video_1080p_merge = 0  
-    download_video_720pMAX = 1
-    download_video_LQ = 0
-    download_video_playlist_720pMAX = 0
-    download_video_playlist_LQ = 0
-    
-    @classmethod
-    def resetValues(self):
-        self.download_mp4_audio = 0
-        self.download_mp3_audio = 0
-        self.download_mp3_audio_with_thumbnail = 0
-        self.download_mp3_audio_playlist = 0
-        self.download_mp3_audio_playlist_with_thumbnails = 0
-        self.download_mp4_audio_playlist = 0
-        self.download_video_1080p = 0
-        self.download_video_1080p_merge = 0  
-        self.download_video_720pMAX = 0
-        self.download_video_LQ = 0
-        self.download_video_playlist_720pMAX = 0
-        self.download_video_playlist_LQ = 0
-
-global currentMode
-currentMode = 2
 
 ASCI_grey = "#808080"
 TEXT_collor = "white"
@@ -127,14 +84,14 @@ def stringReplace(word,toReplace,replacement):
 # # Download Functions : Audios 
 # -----------------------------
 
-def download_mp3_audio_with_thumbnail_f(link,SAVE_PATH): 
+def download_mp3_audio_with_thumbnail(link,SAVE_PATH): 
     link = playlistOrNot(link,"single_video")
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
     except:
          ("mp3 download connection error")
     try:
-        audio = download_video(yt,"mp3", SAVE_PATH)
+        audio = download_audio(yt,"mp3", SAVE_PATH)
         file_path = ""
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
@@ -144,7 +101,7 @@ def download_mp3_audio_with_thumbnail_f(link,SAVE_PATH):
         try: 
             # download video thumbnail
             yt_image = requests.get(yt.thumbnail_url)
-            with open(os.path.join(SAVE_PATH,"szablon.jpg"),'wb') as f: 
+            with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
                 f.write(yt_image.content)
             # convert audio meta data
             audiofile = eyed3.load(file_path)
@@ -154,17 +111,17 @@ def download_mp3_audio_with_thumbnail_f(link,SAVE_PATH):
             tag.parse(file_path)
             tag.title = yt.title
             tag.artist = yt.author
-            tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
+            tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
             tag.save(version=eyed3.id3.ID3_V2_3)
-            remove_file(SAVE_PATH,"szablon.jpg")
-            # you can see a thumbnail using VLC media player, on windows
+            remove_file(SAVE_PATH,"thumbnail.jpg")
+            # you can see a thumbnail using VLC media player, or something else
         except:
             print("Couldn`t make an image to file "+file_path)
         
     except:
-        print("download_mp3_audio_with_thumbnail_f: (function) dowloading error!")    
+        print("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
 
-def download_mp4_audio_f(link,SAVE_PATH):
+def download_mp4_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
@@ -183,14 +140,14 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
     except: 
         print("Download audio failed")
 
-def download_mp3_audio_f(link,SAVE_PATH):
+def download_mp3_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
     except:
          ("mp3 download connection error")
     try:
-        audio = download_video(yt,"mp3", SAVE_PATH)
+        audio = download_audio(yt,"mp3", SAVE_PATH)
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
@@ -212,7 +169,7 @@ def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
         print("Download video failed")    
 
 # usage: downloading mp3
-def download_video(yt: YouTube, file_type: str, downloads_path: str):
+def download_audio(yt: YouTube, file_type: str, downloads_path: str):
     try:
     # Download a video and debug progress
         if file_type == "mp4":
@@ -224,14 +181,14 @@ def download_video(yt: YouTube, file_type: str, downloads_path: str):
     except: 
         print("download video (function) error!")
 
-def download_video_720pMAX_f(link,SAVE_PATH):
+def download_video_720pMAX(link,SAVE_PATH):
     try: 
         yt = YouTube(link,on_progress_callback=on_progress) 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
     except: 
         print("download_video_720pMAX error!\n Do you set the PATH correctly?")
 
-def download_video_LQ_f(link,SAVE_PATH):
+def download_video_LQ(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
@@ -251,7 +208,7 @@ def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
 # # Download Functions : Playlists : Videos
 # -----------------------------------------
 
-def download_video_playlist_720pMAX_f(link,SAVE_PATH):
+def download_video_playlist_720pMAX(link,SAVE_PATH):
     link = playlistOrNot(link,"playlist")
     try:
         playlist = Playlist(link)
@@ -270,7 +227,7 @@ def download_video_playlist_720pMAX_f(link,SAVE_PATH):
     except:
         print("download_video_playlist_720pMAX: error!")  
 
-def download_video_playlist_LQ_f(link,SAVE_PATH):
+def download_video_playlist_LQ(link,SAVE_PATH):
     link = playlistOrNot(link,"playlist")
     try:
         playlist = Playlist(link)
@@ -293,7 +250,7 @@ def download_video_playlist_LQ_f(link,SAVE_PATH):
 # # Download Functions : Playlists : Audios
 #------------------------------------------
 
-def download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH):
+def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
     try:
         link = playlistOrNot(link,"playlist")
         playlist = Playlist(link)
@@ -306,7 +263,7 @@ def download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH):
             try:
                 print_info_downloading_playlist(str(count_),str(total),str(video.title))
                 #print("downloading (",str(count_),"/",str(total),") ",video.title)
-                audio = download_video(yt,"mp3", SAVE_PATH)
+                audio = download_audio(yt,"mp3", SAVE_PATH)
                 file_path = os.path.join(SAVE_PATH, audio.default_filename)
                 file_path = convert_to_mp3_with_metadata(file_path)
                 count_ += 1
@@ -315,7 +272,7 @@ def download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH):
             try:
                # download video thumbnail
                 yt_image = requests.get(yt.thumbnail_url)  
-                with open(os.path.join(SAVE_PATH,"szablon.jpg"),'wb') as f: 
+                with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
                     f.write(yt_image.content)
                 # convert audio meta data
                 audiofile = eyed3.load(file_path)
@@ -326,18 +283,18 @@ def download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH):
                 tag.title = yt.title
                 tag.artist = yt.author
                 try:
-                    tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'szablon.jpg'),'rb').read(), 'image/jpeg')
+                    tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
                 except:
                     print("couldnt make an image by using tag")
                 tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
-                remove_file(SAVE_PATH,"szablon.jpg")             
+                remove_file(SAVE_PATH,"thumbnail.jpg")             
             except:
                 print("Couldn`t make an image to file "+file_path)
     except:
         print("Erorr during downloading palylist")
         print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")          
 
-def download_mp3_audio_playlist_f(link,SAVE_PATH):
+def download_mp3_audio_playlist(link,SAVE_PATH):
     try:
         link = playlistOrNot(link,"playlist")
         playlist = Playlist(link)
@@ -348,8 +305,8 @@ def download_mp3_audio_playlist_f(link,SAVE_PATH):
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
                 print_info_downloading_playlist(str(count_),str(total),str(video.title))
-                #print("downloading (",str(count_),"/",str(total),") ",video.title)
-                audio = download_video(yt,"mp3", SAVE_PATH)
+                #instead print("downloading (",str(count_),"/",str(total),") ",video.title)
+                audio = download_audio(yt,"mp3", SAVE_PATH)
                 file_path = os.path.join(SAVE_PATH, audio.default_filename)
                 file_path = convert_to_mp3_with_metadata(file_path)
                 count_ += 1
@@ -360,7 +317,7 @@ def download_mp3_audio_playlist_f(link,SAVE_PATH):
         print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")  
 
 
-def download_mp4_audio_playlist_f(link,SAVE_PATH):
+def download_mp4_audio_playlist(link,SAVE_PATH):
     try:
         link = playlistOrNot(link,"playlist")
         playlist = Playlist(link)
@@ -392,8 +349,8 @@ def remove_file(location,filename):
 # Usage: download video in 1080p and merge with audio
 def merge_video_with_audio():
     try:
-        input_audio_path = SAVE_PATH+'/'+"videomerge.mp4"
-        input_video_path = SAVE_PATH+'/'+"audiomerge.mp4"
+        input_audio_path  = SAVE_PATH+'/'+"videomerge.mp4"
+        input_video_path  = SAVE_PATH+'/'+"audiomerge.mp4"
         output_video_path = SAVE_PATH+"/"+"output"+".mp4"
         video = ffmpeg.input(input_video_path)
         audio = ffmpeg.input(input_audio_path)
@@ -418,13 +375,13 @@ def convert_to_mp3_with_metadata(file_path: str) -> str:
                     os.remove(file_path.replace("mp3", "mp4")) # remove mp4 file
                     return file_path
                 except: print("couldnt remove mp4 temporary file")
-            except: print("couldnt write and close adiofile")
+            except: print("couldnt write and close audiofile")
         except: print("couldnt make AdioFileClip")
     except:
         print("convert_to_mp3_with_metadata function error!")
 
 # # inside functions 
-# ------------------
+# -------------------
 
 def time_now():
     now =  datetime.now()
@@ -451,105 +408,6 @@ def playlistOrNot(linkk,confirm):
 # # Button Fucntions (Tkinter)
 # ----------------------------
 
-
-def resetValues(dt: DonwnloadType):    
-    dt.resetValues()
-    label_download.configure(background=ASCI_grey,text="You can change wether you want do download video / audio ^",fg=TEXT_collor)
-
-#def changeDownladType():
-#    # dt:DownladType is defined in main section 
-#    global currentMode 
-#
-#    max_modes = 13  # count -1 , the last is a switcher to first mode
-#    
-#    if currentMode == 1:
-#        resetValues(dt)
-#        dt.download_video_720pMAX = 1 
-#        ButtonAudioVideoDownloadChange.configure(text="1/12 Now you will download video (720p MAX)", command = changeDownladType)
-#        print("downlading video mode ON (720p MAX)")
-#
-#    if currentMode == 2:
-#        resetValues(dt)
-#        dt.download_mp3_audio_with_thumbnail = 1
-#        ButtonAudioVideoDownloadChange.configure(text="2/12 download audio mp3 with thumbnail",command = changeDownladType)
-#    
-#    if currentMode == 3:
-#        resetValues(dt)
-#        dt.download_mp3_audio_playlist_with_thumbnails = 1
-#        ButtonAudioVideoDownloadChange.configure(text="3/12 download audio mp3 playlist with thumbnails",command = changeDownladType)
-#
-#    if currentMode == 4: 
-#        resetValues(dt)
-#        dt.download_mp3_audio = 1
-#        ButtonAudioVideoDownloadChange.configure(text="4/12 Now you will download audio (mp3)", command = changeDownladType)
-#        print("downloading audio mode ON (mp3)")
-#        
-#    if currentMode == 5:
-#        resetValues(dt)
-#        dt.download_mp3_audio_playlist = 1 
-#        ButtonAudioVideoDownloadChange.configure(text="5/12 Now you will download audio PLAYLIST (mp3)", command = changeDownladType)
-#        print("downloading audio PLAYLIST mode ON (mp3)")        
-#
-#    if currentMode == 6:
-#        resetValues(dt)
-#        dt.download_mp4_audio = 1
-#        ButtonAudioVideoDownloadChange.configure(text="6/12 Now you will download audio (mp4)", command = changeDownladType)
-#        print("downloading audio mode ON (mp4)")
-#
-#    if currentMode == 7: 
-#        resetValues(dt)
-#        dt.download_mp4_audio_playlist = 1
-#        ButtonAudioVideoDownloadChange.configure(text="7/12 Now you will download audio PLAYLIST (mp4)", command = changeDownladType)
-#        print("downloading audio playlist mode ON (mp4)")
-#
-#    if currentMode == 8: 
-#        resetValues(dt)
-#        dt.download_video_playlist_720pMAX = 1 
-#        ButtonAudioVideoDownloadChange.configure(text="8/12 Now you will download vido PLAYLIST (720p MAX)", command = changeDownladType)
-#        print("downloading video playlist in high quality mode ON (720p MAX)")
-#
-#    if currentMode == 9:
-#        resetValues(dt)
-#        dt.download_video_1080p_merge = 1
-#        ButtonAudioVideoDownloadChange.configure(text="9/12 download video 1080p and merge with audio",command = changeDownladType)
-#        label_download.configure(background="White" , text = "Warning, energy consuming! " ,fg=TEXT_warning)
-#        print("downloading video 1080p + merge with audio mode ON (WARNING: Energy consuming!)")  
-#    
-#    if currentMode == 10:
-#        resetValues(dt)
-#        dt.download_video_1080p = 1
-#        ButtonAudioVideoDownloadChange.configure(text="10/12 Now you will download video in 1080p with no Voice", command = changeDownladType)
-#        print("downloading video 1080p ON (mp4, no sound)")     
-#
-#    if currentMode == 11:
-#        resetValues(dt)
-#        dt.download_video_LQ = 1
-#        ButtonAudioVideoDownloadChange.configure(text="11/12 Now you will download video (Lowest quality)", command = changeDownladType)
-#        print("downlading video mode ON (Lowest Quality)")
-#
-#    if currentMode == 12: 
-#        resetValues(dt)
-#        dt.download_video_playlist_LQ = 1
-#        ButtonAudioVideoDownloadChange.configure(text="12/12 Now you will download video PLAYLIST (lowest quality)", command = changeDownladType)
-#        print("downloading video playlist in ON (Lowest Quality)")
-#    
-#    currentMode += 1 
-#    if currentMode >= max_modes:
-#        currentMode = 1 
-
-# Top level window
-frame = tkinter.Tk()
-frame.title("YouTube Audio / Video Downloader")
-frame.geometry('500x350')
-frame.configure(background=ASCI_grey)
-
-myFont = font.Font(family='Helvetica', size=12)
-
-global SAVE_PATH
-SAVE_PATH = ""
-global link 
-link = ""
-
 def enableDownloadButton():
     if ButtonDownload["state"] == "disabled":
         ButtonDownload["state"] = "normal" #other options: active
@@ -561,97 +419,38 @@ def buttonActionConfirmThePath():
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
     
-#def buttonActionDownload():
-#    global SAVE_PATH
-#    global link 
-#    link = textBoxDownload.get(1.0, "end-1c")
-#    label_download.config(text = "Provided Input: "+link)  
-#    print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
-#    print(dt.download_video_720pMAX,
-#          " ",dt.download_video_LQ,
-#          " ",dt.download_mp4_audio,
-#          " ",dt.download_mp4_audio_playlist,
-#          " ",dt.download_video_playlist_720pMAX,
-#          " ",dt.download_video_playlist_LQ,
-#          " ",dt.download_video_1080p,
-#          " ",dt.download_mp3_audio,
-#          " ",dt.download_mp3_audio_playlist,
-#          " ",dt.download_video_1080p_merge,
-#          " ",dt.download_mp3_audio_with_thumbnail,
-#          " ",dt.download_mp3_audio_playlist_with_thumbnails)
-#
-#    if dt.download_video_720pMAX == 1:
-#        download_video_720pMAX_f(link,SAVE_PATH)
-#    
-#    if dt.download_video_LQ == 1:
-#        download_video_LQ_f(link,SAVE_PATH)
-#    
-#    if dt.download_mp4_audio == 1:
-#        download_mp4_audio_f(link,SAVE_PATH)
-#    
-#    if dt.download_mp4_audio_playlist == 1:
-#        download_mp4_audio_playlist_f(link,SAVE_PATH)
-#    
-#    if dt.download_video_playlist_720pMAX == 1:
-#        download_video_playlist_720pMAX_f(link,SAVE_PATH) 
-#
-#    if dt.download_video_playlist_LQ == 1:
-#        download_video_playlist_LQ_f(link,SAVE_PATH)        
-#    
-#    if dt.download_video_1080p == 1:
-#        link = playlistOrNot(link,"single_video")
-#        downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
-#            
-#    if dt.download_mp3_audio == 1:
-#        download_mp3_audio_f(link,SAVE_PATH)
-#        
-#    if dt.download_mp3_audio_with_thumbnail == 1: 
-#        download_mp3_audio_with_thumbnail_f(link,SAVE_PATH)  
-# 
-#    if dt.download_mp3_audio_playlist == 1:
-#        download_mp3_audio_playlist_f(link,SAVE_PATH)
-#              
-#    if dt.download_mp3_audio_playlist_with_thumbnails == 1:
-#        download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH)      
-#        
-#    if dt.download_video_1080p_merge == 1:
-#        downloadVideo_1080p()
-#        downloadAudioToBeMerged()
-#        merge_video_with_audio() 
-#
-#    print(time_now(),' Finished working!') 
-
+    
 def startDownloading():
     global link 
     global SAVE_PATH
-    link = textBoxDownload.get(1.0, "end-1c")
+    link = textBoxDownloadLink.get(1.0, "end-1c")
     label_download.config(text = "Provided Input: "+link)  
-    chosen_plan = cmb.get()
+    chosen_plan = Combobox.get()
     print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
     
     if chosen_plan == "video 720p MAX":
-        download_video_720pMAX_f(link,SAVE_PATH)
+        download_video_720pMAX(link,SAVE_PATH)
             
     if chosen_plan == "audio mp3 with thumbnail":
-        download_mp3_audio_with_thumbnail_f(link,SAVE_PATH) 
+        download_mp3_audio_with_thumbnail(link,SAVE_PATH) 
         
     if chosen_plan == "audio mp3 playlist with thumbnails":
-        download_mp3_audio_playlist_with_thumbnails_f(link,SAVE_PATH) 
+        download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH) 
          
     if chosen_plan == "audio mp3":
-        download_mp3_audio_f(link,SAVE_PATH)
+        download_mp3_audio(link,SAVE_PATH)
          
     if chosen_plan == "audio playlist mp3":
-         download_mp3_audio_playlist_f(link,SAVE_PATH)
+         download_mp3_audio_playlist(link,SAVE_PATH)
          
     if chosen_plan == "audio mp4":
-         download_mp4_audio_f(link,SAVE_PATH)
+         download_mp4_audio(link,SAVE_PATH)
          
     if chosen_plan == "audio playlist mp4":
-        download_mp4_audio_playlist_f(link,SAVE_PATH)
+        download_mp4_audio_playlist(link,SAVE_PATH)
          
     if chosen_plan == "video playlist 720p MAX":
-        download_video_playlist_720pMAX_f(link,SAVE_PATH)
+        download_video_playlist_720pMAX(link,SAVE_PATH)
         
     if chosen_plan == "video 1080p and merge with audio":
         downloadVideo_1080p_toBeMerged(link,SAVE_PATH)
@@ -662,12 +461,12 @@ def startDownloading():
         downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
         
     if chosen_plan == "video (Lowest quality)":
-        download_video_LQ_f(link,SAVE_PATH)
+        download_video_LQ(link,SAVE_PATH)
         
     if chosen_plan == "video playlist (Lowest quality)":
-        download_video_playlist_LQ_f(link,SAVE_PATH) 
+        download_video_playlist_LQ(link,SAVE_PATH) 
 
-#def browse(): # not working 
+#def browse(): # TODO , not working yet
 #    global SAVE_PATH
 #    try:
 #        download = filedialog.askdirectory(initialdir="YOUR DIRECTORY PATH", title="Save Video")
@@ -682,15 +481,21 @@ def startDownloading():
 # # Main |
 # -------|
 
-#now =  datetime.now()
-#date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-#date_time = stringReplace(date_time,'/','-') 
-#date_time = stringReplace(date_time,':','-')+'.3gpp'
-#date_time = date_time[:-5]
-#print(date_time)
+global SAVE_PATH
+SAVE_PATH = ""
+global link 
+link = ""
 
 print(time_now())
 
+
+# Top level window -------------------------
+
+frame = tkinter.Tk()
+frame.title("YouTube Audio / Video Downloader")
+frame.geometry('500x350')
+frame.configure(background=ASCI_grey)
+myFont = font.Font(family='Helvetica', size=12)
 
 # textbox for the path ----------------------
 
@@ -710,6 +515,9 @@ labelPath.pack()
 ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
 ButtonPathConfirm['font'] = myFont
 ButtonPathConfirm.pack()
+
+# Browse Button TODO -----------------------
+
 # Label Creation
 #browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
 #browse_B.pack()
@@ -718,15 +526,13 @@ ButtonPathConfirm.pack()
 #              pady=1,
 #              padx=1)
 
-# Browse Button TODO -----------------------
-
 #browseButton = tkinter.Button(frame,text="browse",command=browse)
 #browseButton.pack()
 
 # Textbox for the link ----------------------
 
-textBoxDownload = tkinter.Text(frame,height = 5,width = 20)  
-textBoxDownload.pack()
+textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
+textBoxDownloadLink.pack()
 
 # Label with info for the <confirm the path>
 
@@ -743,38 +549,10 @@ ButtonDownload['font'] = myFont
 
 # Combobox ------------------------
 
-dtt = downloadType
-cmb=ttk.Combobox(frame,values=dtt.course,width=30,state = "readonly",font=myFont)
-cmb.current(0) # show first option 
+dtt = DownloadType
+Combobox=ttk.Combobox(frame,values=dtt.downloadTypes,width=30,state = "readonly",font=myFont)
+Combobox.current(0) # show first option 
 frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
-cmb.pack()
-
-# audio / video change button ----------------
-
-#dt = DonwnloadType 
-#
-#temp_string = ""
-#if dt.download_video_720pMAX == 1:
-#    temp_string = "video (720p max)"
-#if dt.download_video_LQ == 1:
-#    temp_string = "video (Lowest Quality)"
-#if dt.download_mp4_audio == 1:
-#    temp_string = "audio (mp4)"   
-#
-#ButtonAudioVideoDownloadChange = tkinter.Button(frame,text="1/12 Now you will download "+temp_string, command = changeDownladType)
-#ButtonAudioVideoDownloadChange['font'] = myFont
-#ButtonAudioVideoDownloadChange.pack()
-
-# Download Button ----------------
-
-#ButtonDownload = tkinter.Button(frame, text="Download", command = startDownloading)
-#ButtonDownload['font'] = myFont
-#ButtonDownload.pack()
-
-# Label with info for the button above ------
-
-#label_audioVideoChange = tkinter.Label(frame,text="You can change wether you want do download video / audio ^", background=ASCI_grey,fg=TEXT_collor)
-#label_audioVideoChange['font'] = myFont
-#label_audioVideoChange.pack()
+Combobox.pack()
 
 frame.mainloop()
