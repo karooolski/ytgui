@@ -85,6 +85,7 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
             tag.parse(file_path)
             tag.title = yt.title
             tag.artist = yt.author
+            tag.artist_url = link
             tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
             tag.save(version=eyed3.id3.ID3_V2_3)
             remove_file(SAVE_PATH,"thumbnail.jpg")
@@ -256,6 +257,7 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
                 tag.parse(file_path)
                 tag.title = yt.title
                 tag.artist = yt.author
+                tag.artist_url = link
                 try:
                     tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
                 except:
@@ -489,72 +491,84 @@ SAVE_PATH = ""
 global link 
 link = ""
 
-print(time_now())
 
-# Top level window -------------------------
 
-frame = tkinter.Tk()
-frame.title("YouTube Audio / Video Downloader")
-frame.geometry('500x350')
-frame.configure(background=main_collor)
-myFont = font.Font(family=gui_font, size=gui_font_size)
+def main():
 
-# textbox for the path ----------------------
+    global textBoxPath
+    global ButtonDownload
+    global labelPath
+    global textBoxDownloadLink
+    global Combobox
 
-textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
-textBoxPath.pack()
+    print(time_now())
 
-# Label with info <enetering the path> ------
+    # Top level window -------------------------
 
-labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=main_collor,fg=TEXT_collor)
-labelPath['font'] = myFont
-labelPath.pack()
+    frame = tkinter.Tk()
+    frame.title("YouTube Audio / Video Downloader")
+    frame.geometry('500x350')
+    frame.configure(background=main_collor)
+    myFont = font.Font(family=gui_font, size=gui_font_size)
 
-# Button Creation
+    # textbox for the path ----------------------
 
-# Button to confirm tha path ----------------
+    textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
+    textBoxPath.pack()
 
-ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
-ButtonPathConfirm['font'] = myFont
-ButtonPathConfirm.pack()
+    # Label with info <enetering the path> ------
 
-# Browse Button TODO -----------------------
+    labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=main_collor,fg=TEXT_collor)
+    labelPath['font'] = myFont
+    labelPath.pack()
 
-# Label Creation
-#browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
-#browse_B.pack()
-#browse_B.grid(row=3,
-#              column=2,
-#              pady=1,
-#              padx=1)
+    # Button Creation
 
-#browseButton = tkinter.Button(frame,text="browse",command=browse)
-#browseButton.pack()
+    # Button to confirm tha path ----------------
 
-# Textbox for the link ----------------------
+    ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
+    ButtonPathConfirm['font'] = myFont
+    ButtonPathConfirm.pack()
 
-textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
-textBoxDownloadLink.pack()
+    # Browse Button TODO -----------------------
 
-# Label with info for the <confirm the path>
+    # Label Creation
+    #browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
+    #browse_B.pack()
+    #browse_B.grid(row=3,
+    #              column=2,
+    #              pady=1,
+    #              padx=1)
 
-label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
-label_download['font'] = myFont
-label_download.pack()
+    #browseButton = tkinter.Button(frame,text="browse",command=browse)
+    #browseButton.pack()
 
-# Button to confirm download ----------------
+    # Textbox for the link ----------------------
 
-ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = startDownloading ) #buttonActionDownload
-ButtonDownload.pack()
-ButtonDownload["state"] = "disabled"  # button is disabled at start 
-ButtonDownload['font'] = myFont
+    textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
+    textBoxDownloadLink.pack()
 
-# Combobox to choose an option of download---
+    # Label with info for the <confirm the path>
 
-dtt = DownloadType
-Combobox=ttk.Combobox(frame,values=dtt.downloadTypes,width=30,state = "readonly",font=myFont)
-Combobox.current(0) # show first option 
-frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
-Combobox.pack()
+    label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
+    label_download['font'] = myFont
+    label_download.pack()
 
-frame.mainloop()
+    # Button to confirm download ----------------
+
+    ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = startDownloading ) #buttonActionDownload
+    ButtonDownload.pack()
+    ButtonDownload["state"] = "disabled"  # button is disabled at start 
+    ButtonDownload['font'] = myFont
+
+    # Combobox to choose an option of download---
+
+    dtt = DownloadType
+    Combobox=ttk.Combobox(frame,values=dtt.downloadTypes,width=30,state = "readonly",font=myFont)
+    Combobox.current(0) # show first option 
+    frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
+    Combobox.pack()
+
+    frame.mainloop()
+
+main()
