@@ -65,6 +65,7 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
     except:
          ("mp3 download connection error")
     try:
+        print_info_downloading_single_file(yt.title)
         audio = download_audio(yt,"mp3", SAVE_PATH)
         file_path = ""
         try:
@@ -100,6 +101,7 @@ def download_mp4_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
+        print_info_downloading_single_file(yt.title)
         yt.streams.get_audio_only("mp4").download(SAVE_PATH)
     except:
         print("yt.streams.get_audio_only: error!")
@@ -109,6 +111,7 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
     global title       # variable for merge and rename purposes
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
+        print_info_downloading_single_file(yt.title)
         #yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audiocbd")
         yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
@@ -119,6 +122,7 @@ def download_mp3_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
+         print_info_downloading_single_file(yt.title)
     except:
          ("mp3 download connection error")
     try:
@@ -139,6 +143,7 @@ def download_mp3_audio(link,SAVE_PATH):
 def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
+        print_info_downloading_single_file(yt.title)
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
         print("Download video failed")    
@@ -146,6 +151,7 @@ def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
 # usage: downloading mp3
 def download_audio(yt: YouTube, file_type: str, downloads_path: str):
     try:
+        print_info_downloading_single_file(yt.title)
     # Download a video and debug progress
         if file_type == "mp4":
             audio = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
@@ -158,7 +164,8 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
 
 def download_video_720pMAX(link,SAVE_PATH):
     try: 
-        yt = YouTube(link,on_progress_callback=on_progress) 
+        yt = YouTube(link,on_progress_callback=on_progress)
+        print_info_downloading_single_file(yt.title) 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
     except: 
         print("download_video_720pMAX error!\n Do you set the PATH correctly?")
@@ -167,6 +174,7 @@ def download_video_LQ(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
+        print_info_downloading_single_file(yt.title)
         stream = yt.streams.first()
         stream.download(SAVE_PATH)
     except:
@@ -175,6 +183,7 @@ def download_video_LQ(link,SAVE_PATH):
 def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
     try:
         yt = YouTube(link,on_progress_callback=on_progress) 
+        print_info_downloading_single_file(yt.title)
         yt.streams.filter(res=rezolution, progressive=False).first().download(SAVE_PATH)
     except: 
         print("Download video in ",str(rezolution),"p failed")
@@ -394,6 +403,9 @@ def time_now():
     date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
     date_time = stringReplace(date_time,'/','.')    
     return date_time
+
+def print_info_downloading_single_file(video_title : str):
+    print(time_now()," downloading ",video_title)
 
 def print_info_downloading_playlist(count_: str, total: str , video_title):  
     print(time_now()," downloading (",str(count_),"/",str(total),") ",video_title)
