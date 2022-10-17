@@ -25,8 +25,8 @@ link = ""
 
 # or backup more than one list  (backup_more_playlists = 1)
 list_of_links = [
-        "", # playlist 1 
-        ""  # playlist 2
+        "",     # playlist 1
+        ""     # playlist 2 ...
         ]
 
 # running script:           <windows>: python yt_playlist_backup.py
@@ -76,12 +76,18 @@ def playlistOrNot(linkk,confirm):
 #        print ("cant write a file")
                 #print_info_downloading_playlist(str(count_),str(total),str(video.title),str(temp_video_link))
                 #out_string = print(time_now(),"Video (",str(count_),"/",str(total),") ",video.title,"+",temp_video_link)
+
+
+    
         
 def print_playlist_info_to_file(link):
+    percent_count = 1
+    percent_max = 100
     link = playlistOrNot(link,"playlist")
     playlist = Playlist(link)
+    playlist_title = playlist.title
     print("backuping playlist",playlist.title,"...")
-    filename = time_for_filename() + " " + playlist.title + ".txt"
+    filename = time_for_filename() + " " + playlist_title + ".txt"
     f = open(filename,'w')
     try:
         print("Progress: (showing onlny <count>%10 == 0)\n")
@@ -98,8 +104,17 @@ def print_playlist_info_to_file(link):
                 except:
                     print("out_string error")
                 #print(out_string)
-                if int(count_) % 10 == 0:
-                    print(count_,"/",total)
+                #if int(count_) % 10 == 0:
+                #    print(count_,"/",total)
+                percentage_value_per_one_film = 99/int(total)
+                #if count_ >= int(total)/percent_max:
+                last_percentage = percent_count
+                percent_count = percent_count + percentage_value_per_one_film
+                percent_max = percent_max - 1
+                
+                if(int(percent_count) - int(last_percentage) >= 1): # i dont want to show every percentage less than 1%, but only decimal percentages
+                    print(percent_count,"% , downloading:",playlist_title," ",time_now())
+                
                 try:
                     f.write(out_string)
                 except: a = 1 #print ("can`t write to file!") # it would be shown too often with no reason, but it`s fine
