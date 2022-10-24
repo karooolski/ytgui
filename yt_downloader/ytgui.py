@@ -6,11 +6,14 @@ import tkinter.font as font
 # PYTUBE API ------------------------------
 from pytube import Playlist
 from pytube import YouTube 
-from pytube.cli import on_progress #this module contains the built in progress bar. 
+from pytube.cli import on_progress #this module contains the built in progress bar. (console)
 # System -------------------------------------------------
 import os
 from datetime import datetime
 import requests
+# System :: If file exists -------------------------------
+import os.path
+from os.path import exists
 # EDIT METADATA of the file -----------------------------
 import eyed3
 from eyed3.id3.frames import ImageFrame
@@ -65,7 +68,7 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
     except:
          ("mp3 download connection error")
     try:
-        print_info_downloading_single_file(yt.title)
+        print_info_downloading_single_file(yt.title,link)
         audio = download_audio(yt,"mp3", SAVE_PATH)
         file_path = ""
         try:
@@ -101,7 +104,7 @@ def download_mp4_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
-        print_info_downloading_single_file(yt.title)
+        print_info_downloading_single_file(yt.title,link)
         yt.streams.get_audio_only("mp4").download(SAVE_PATH)
     except:
         print("yt.streams.get_audio_only: error!")
@@ -111,7 +114,7 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
     global title       # variable for merge and rename purposes
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
-        print_info_downloading_single_file(yt.title)
+        print_info_downloading_single_file(yt.title,link)
         #yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audiocbd")
         yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
@@ -122,7 +125,7 @@ def download_mp3_audio(link,SAVE_PATH):
     link = playlistOrNot(link,"single_video")
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
-         print_info_downloading_single_file(yt.title)
+         print_info_downloading_single_file(yt.title,link)
     except:
          ("mp3 download connection error")
     try:
@@ -143,7 +146,7 @@ def download_mp3_audio(link,SAVE_PATH):
 def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
-        print_info_downloading_single_file(yt.title)
+        print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
         print("Download video failed")    
@@ -151,7 +154,7 @@ def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
 # usage: downloading mp3
 def download_audio(yt: YouTube, file_type: str, downloads_path: str):
     try:
-        print_info_downloading_single_file(yt.title)
+        #print_info_downloading_single_file(yt.title)
     # Download a video and debug progress
         if file_type == "mp4":
             audio = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
@@ -165,7 +168,7 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
 def download_video_720pMAX(link,SAVE_PATH):
     try: 
         yt = YouTube(link,on_progress_callback=on_progress)
-        print_info_downloading_single_file(yt.title) 
+        print_info_downloading_single_file(yt.title,link) 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
     except: 
         print("download_video_720pMAX error!\n Do you set the PATH correctly?")
@@ -183,7 +186,7 @@ def download_video_LQ(link,SAVE_PATH):
 def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
     try:
         yt = YouTube(link,on_progress_callback=on_progress) 
-        print_info_downloading_single_file(yt.title)
+        print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res=rezolution, progressive=False).first().download(SAVE_PATH)
     except: 
         print("Download video in ",str(rezolution),"p failed")
@@ -202,12 +205,12 @@ def download_video_playlist_720pMAX(link,SAVE_PATH):
             temp_link = video.watch_url
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
-                print_info_downloading_playlist(str(count_),str(total),str(video.title))
+                print_info_downloading_playlist(str(count_),total,video.title,temp_link)
                 #print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
                 yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
                 count_ += 1
             except:
-                print("download_video_playlist_720pMAX: fail during downloading")
+                print("download_video_playlist_720pMAX: fail during downloading, does video has age restictions?")
     except:
         print("download_video_playlist_720pMAX: error!")  
 
@@ -221,7 +224,7 @@ def download_video_playlist_LQ(link,SAVE_PATH):
             temp_link = video.watch_url
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
-                print_info_downloading_playlist(str(count_),str(total),str(video.title))
+                print_info_downloading_playlist(str(count_),total,video.title,temp_link)
                 #print("downloading ("+str(count_)+"/"+str(total)+") "+video.title)
                 stream = yt.streams.first()
                 stream.download(SAVE_PATH)
@@ -244,37 +247,61 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
             temp_link = video.watch_url
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             file_path = ""
-            try:
-                print_info_downloading_playlist(str(count_),str(total),str(video.title))
-                #print("downloading (",str(count_),"/",str(total),") ",video.title)
-                audio = download_audio(yt,"mp3", SAVE_PATH)
-                file_path = os.path.join(SAVE_PATH, audio.default_filename)
-                file_path = convert_to_mp3_with_metadata(file_path)
+            print_info_downloading_playlist(str(count_),total,video.title,temp_link)
+            
+            # second way to find a file: 
+            #path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt.title ) + ".mp3" ) 
+            #file_exists = exists(path_to_file)
+            # if file_exists :
+            
+            # way to print dir: 
+            #for i in range(len(dir)):
+                #dir[i] = str(dir[i])
+                #print (dir[i],)
+            
+            dir = os.listdir(SAVE_PATH)
+            if  dir.__contains__(str(yt.title)+".mp3"): # if file_exists :
+                print("File is already exists!")
                 count_ += 1
-            except:
-                print("some problem occured during dowloading!")
-            try:
-               # download video thumbnail
-                yt_image = requests.get(yt.thumbnail_url)  
-                with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
-                    f.write(yt_image.content)
-                # convert audio meta data
-                audiofile = eyed3.load(file_path)
-                if not audiofile.tag:
-                    audiofile.initTag()   
-                tag = id3.Tag()    
-                tag.parse(file_path)
-                tag.title = yt.title
-                tag.artist = yt.author
-                tag.artist_url = link
+                # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
+            else:    
+               # print("file not exists: ")
+                print(str(yt.title))
+                #os.system("pause")
                 try:
-                    tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
+                    #print("downloading (",str(count_),"/",str(total),") ",video.title)
+                    audio = download_audio(yt,"mp3", SAVE_PATH)
+                    #audioname = audio.default_filename
+                    #audioname = stringReplace(audioname,".",",")
+                    file_path = os.path.join(SAVE_PATH,audio.default_filename) # 
+                    file_path = convert_to_mp3_with_metadata(file_path)
+                    #os.rename(file_path,stringReplace(file_path,".",","))
+                    #os.rename(file_path,stringReplace(file_path,",mp3",".mp3"))
+                    count_ += 1
                 except:
-                    print("couldnt make an image by using tag")
-                tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
-                remove_file(SAVE_PATH,"thumbnail.jpg")             
-            except:
-                print("Couldn`t make an image to file "+file_path)
+                    print("some problem occured during dowloading!")
+                try:
+                    # download video thumbnail
+                    yt_image = requests.get(yt.thumbnail_url)  
+                    with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
+                        f.write(yt_image.content)
+                    # convert audio meta data
+                    audiofile = eyed3.load(file_path)
+                    if not audiofile.tag:
+                        audiofile.initTag()   
+                    tag = id3.Tag()    
+                    tag.parse(file_path)
+                    tag.title = yt.title
+                    tag.artist = yt.author
+                    tag.artist_url = link
+                    try:
+                        tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
+                    except:
+                        print("couldnt make an image by using tag")
+                    tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
+                    remove_file(SAVE_PATH,"thumbnail.jpg")             
+                except:
+                    print("Couldn`t make an image to file "+file_path)
     except:
         print("Erorr during downloading palylist")
         print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")          
@@ -289,7 +316,7 @@ def download_mp3_audio_playlist(link,SAVE_PATH):
             temp_link = video.watch_url
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
-                print_info_downloading_playlist(str(count_),str(total),str(video.title))
+                print_info_downloading_playlist(str(count_),total,video.title,temp_link)
                 #instead print("downloading (",str(count_),"/",str(total),") ",video.title)
                 audio = download_audio(yt,"mp3", SAVE_PATH)
                 file_path = os.path.join(SAVE_PATH, audio.default_filename)
@@ -312,7 +339,7 @@ def download_mp4_audio_playlist(link,SAVE_PATH):
             temp_link = video.watch_url
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
-                print_info_downloading_playlist(str(count_),str(total),str(video.title))
+                print_info_downloading_playlist(str(count_),total,video.title,temp_link)
                 #print("downloading (",str(count_),"/",str(total),") ",video.title)
                 try:
                     yt.streams.get_audio_only("mp4").download(SAVE_PATH)
@@ -400,24 +427,27 @@ def stringReplace(word,toReplace,replacement):
 
 def time_now():
     now =  datetime.now()
-    date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
+    date_time = now.strftime("%d.%m.%Y, %H:%M:%S")
     date_time = stringReplace(date_time,'/','.')    
     return date_time
 
-def print_info_downloading_single_file(video_title : str):
-    print(time_now()," downloading ",video_title)
+def print_info_downloading_single_file(video_title : str, video_link : str):
+    print(time_now()," downloading ",video_title," ", video_link)
 
-def print_info_downloading_playlist(count_: str, total: str , video_title):  
-    print(time_now()," downloading (",str(count_),"/",str(total),") ",video_title)
+def print_info_downloading_playlist(count_: str, total: str , video_title : str , video_link : str):  
+    print(time_now()," downloading (",str(count_),"/",str(total),") ",video_title," ",video_link)
 
 def playlistOrNot(linkk,confirm):
     print("checking playlist or single video:")
     print(link)
     if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
         print("playlist confirmed")
+        print("--------------------------------")
+        
         return link
     if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and confirm == "single_video":
         print("single video confirmed")
+        print("--------------------------------")
         return link
     else:
         print("UserErorr: link adressing playlist, not one film")
@@ -444,6 +474,7 @@ def startDownloading():
     #label_download.config(text = "Provided Input: "+link)  
     chosen_plan = Combobox.get()
     print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
+    print("--------------------------------")
     
     if chosen_plan == "video 720p MAX":
         download_video_720pMAX(link,SAVE_PATH)
