@@ -250,23 +250,32 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
             print_info_downloading_playlist(str(count_),total,video.title,temp_link)
             
             # second way to find a file: 
-            #path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt.title ) + ".mp3" ) 
-            #file_exists = exists(path_to_file)
+            path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt.title ) + ".mp3" ) 
+            file_exists = exists(path_to_file)
             # if file_exists :
             
-            # way to print dir: 
-            #for i in range(len(dir)):
-                #dir[i] = str(dir[i])
-                #print (dir[i],)
+            flag = 0 # flag idicates if the name of the yt.title and a file in the SAVE_PATH are the same
             
             dir = os.listdir(SAVE_PATH)
-            if  dir.__contains__(str(yt.title)+".mp3"): # if file_exists :
-                print("File is already exists!")
+            # way to print dir: 
+            for i in range(len(dir)):
+                #dir[i] = str(dir[i])
+                #dir[i] = stringReplace(dir[i],".","")
+                #yt_title_temp = stringReplace(yt.title,".","")
+                if This_Two_Are_The_Same(dir[i],yt.title):
+                    #print("-------THESE FILES ARE THE SAME--------")
+                    flag = 1
+                #print (dir[i],)
+            
+            
+            #if  dir.__contains__(str(yt.title)+".mp3"): # if file_exists :
+            if file_exists or flag == 1: 
+                print("----File is already exists!---")
                 count_ += 1
                 # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
             else:    
-               # print("file not exists: ")
-                print(str(yt.title))
+                print("file not exists: ")
+#                print(str(yt.title))
                 #os.system("pause")
                 try:
                     #print("downloading (",str(count_),"/",str(total),") ",video.title)
@@ -417,13 +426,12 @@ def change_backslashes_to_windows_type(word):
     return(s)
 
 def stringReplace(word,toReplace,replacement):
-    ex = toReplace
-    l = list(word)
+    word_ = list(word)
     for i in range(len(word)):
-        if l[i] == ex:
-            l[i] = replacement
-        s = ''.join(l)
-    return(s)
+        if word_[i] == toReplace:
+            word_[i] = replacement
+        output = ''.join(word_)
+    return(output)
 
 def time_now():
     now =  datetime.now()
@@ -452,6 +460,50 @@ def playlistOrNot(linkk,confirm):
     else:
         print("UserErorr: link adressing playlist, not one film")
         return ' ' # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
+
+def This_Two_Are_The_Same(dir_i : str , yt_title):
+    # example : 
+    # output : "CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver).mp3"
+    # yt.title:"CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver.).mp3"
+    # 
+    # And we dont want to donwnload again olny becaouse the name is different 
+    # So i am cutting off every character that after download is vanishing and caomparing names 
+    
+    path_dir_i = dir_i # this is oputput filename of converting file to a .mp3
+    path_dir_i = stringReplace(path_dir_i,".","")
+    path_dir_i = stringReplace(path_dir_i,",","")
+    path_dir_i = stringReplace(path_dir_i,"|","")
+    path_dir_i = stringReplace(path_dir_i,"/","")
+    path_dir_i = stringReplace(path_dir_i,"`","")
+    path_dir_i = stringReplace(path_dir_i,"'","")
+    path_dir_i = stringReplace(path_dir_i,"\"","")
+    path_dir_i = stringReplace(path_dir_i,":","")
+    path_dir_i = stringReplace(path_dir_i,"#","")
+    
+    path_dir_i = path_dir_i[:-3] # removing 'mp3' (last characters at those strings)
+    
+    path_yt_title =  yt_title # this what yt.title returns
+    path_yt_title = stringReplace(path_yt_title,".","")
+    path_yt_title = stringReplace(path_yt_title,",","")
+    path_yt_title = stringReplace(path_yt_title,"|","")
+    path_yt_title = stringReplace(path_yt_title,"/","")
+    path_yt_title = stringReplace(path_yt_title,"`","")
+    path_yt_title = stringReplace(path_yt_title,"'","")
+    path_yt_title = stringReplace(path_yt_title,"\"","")
+    path_yt_title = stringReplace(path_yt_title,":","")
+    path_yt_title = stringReplace(path_yt_title,"#","")
+    
+    if path_dir_i == path_yt_title:
+#        print("This 2 are the same")
+#        print(path_after_key)
+#        print(path_first_key)
+        return True
+    else:
+#        print("This 2 are NOT the same")
+#        print(path_dir_i)
+#        print(path_yt_title)
+        return False
+
 
 # # Button Fucntions (Tkinter)
 # ----------------------------
