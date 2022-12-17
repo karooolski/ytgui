@@ -96,7 +96,6 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
             # you can see a thumbnail using VLC media player, or something else
         except:
             print("Couldn`t make an image to file "+file_path)
-        
     except:
         print("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
 
@@ -258,44 +257,30 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
             
             dir = os.listdir(SAVE_PATH)
             # way to print dir: 
-            for i in range(len(dir)):
-                #dir[i] = str(dir[i])
-                #dir[i] = stringReplace(dir[i],".","")
-                #yt_title_temp = stringReplace(yt.title,".","")
+            for i in range(len(dir)): # iterate thorough filenames in SAVE_PATH location to see if there are some copies 
                 if This_Two_Are_The_Same(dir[i],yt.title):
                     #print("-------THESE FILES ARE THE SAME--------")
                     flag = 1
                 #print (dir[i],)
-            
-            
-            #if  dir.__contains__(str(yt.title)+".mp3"): # if file_exists :
-            if file_exists or flag == 1: 
+            if file_exists or flag == 1: #the same as : if  dir.__contains__(str(yt.title)+".mp3"): 
                 print("----File is already exists!---")
                 count_ += 1
                 # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
             else:    
                 print("file not exists: ")
-#                print(str(yt.title))
                 #os.system("pause")
                 try:
-                    #print("downloading (",str(count_),"/",str(total),") ",video.title)
                     audio = download_audio(yt,"mp3", SAVE_PATH)
-                    #audioname = audio.default_filename
-                    #audioname = stringReplace(audioname,".",",")
                     file_path = os.path.join(SAVE_PATH,audio.default_filename) # 
                     file_path = convert_to_mp3_with_metadata(file_path)
-                    #os.rename(file_path,stringReplace(file_path,".",","))
-                    #os.rename(file_path,stringReplace(file_path,",mp3",".mp3"))
                     count_ += 1
                 except:
                     print("some problem occured during dowloading!")
                 try:
-                    # download video thumbnail
-                    yt_image = requests.get(yt.thumbnail_url)  
+                    yt_image = requests.get(yt.thumbnail_url) # download video thumbnail  
                     with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
                         f.write(yt_image.content)
-                    # convert audio meta data
-                    audiofile = eyed3.load(file_path)
+                    audiofile = eyed3.load(file_path) # convert audio meta data
                     if not audiofile.tag:
                         audiofile.initTag()   
                     tag = id3.Tag()    
@@ -326,7 +311,6 @@ def download_mp3_audio_playlist(link,SAVE_PATH):
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
                 print_info_downloading_playlist(str(count_),total,video.title,temp_link)
-                #instead print("downloading (",str(count_),"/",str(total),") ",video.title)
                 audio = download_audio(yt,"mp3", SAVE_PATH)
                 file_path = os.path.join(SAVE_PATH, audio.default_filename)
                 file_path = convert_to_mp3_with_metadata(file_path)
@@ -349,7 +333,6 @@ def download_mp4_audio_playlist(link,SAVE_PATH):
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
                 print_info_downloading_playlist(str(count_),total,video.title,temp_link)
-                #print("downloading (",str(count_),"/",str(total),") ",video.title)
                 try:
                     yt.streams.get_audio_only("mp4").download(SAVE_PATH)
                 except: print("download_mp4_audio_playlist: Stream download error")
@@ -461,6 +444,9 @@ def playlistOrNot(linkk,confirm):
         print("UserErorr: link adressing playlist, not one film")
         return ' ' # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
 
+def remove_non_ascii(text):
+    return ''.join([i if ord(i) < 128 else '' for i in text])
+
 def This_Two_Are_The_Same(dir_i : str , yt_title):
     # example : 
     # output : "CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver).mp3"
@@ -479,8 +465,13 @@ def This_Two_Are_The_Same(dir_i : str , yt_title):
     path_dir_i = stringReplace(path_dir_i,"\"","")
     path_dir_i = stringReplace(path_dir_i,":","")
     path_dir_i = stringReplace(path_dir_i,"#","")
+    path_dir_i = stringReplace(path_dir_i," ","")
+    #path_dir_i = stringReplace(path_dir_i,"💙","")
+    #path_dir_i = stringReplace(path_dir_i,"🇳🇴","")
     
+    path_dir_i = remove_non_ascii(path_dir_i) # this should be better than this both at the top
     path_dir_i = path_dir_i[:-3] # removing 'mp3' (last characters at those strings)
+    #print("path_dir_i: "+path_dir_i)
     
     path_yt_title =  yt_title # this what yt.title returns
     path_yt_title = stringReplace(path_yt_title,".","")
@@ -492,6 +483,11 @@ def This_Two_Are_The_Same(dir_i : str , yt_title):
     path_yt_title = stringReplace(path_yt_title,"\"","")
     path_yt_title = stringReplace(path_yt_title,":","")
     path_yt_title = stringReplace(path_yt_title,"#","")
+    path_yt_title = stringReplace(path_yt_title," ","")
+    #path_yt_title = stringReplace(path_dir_i,"💙","")
+    #path_yt_title = stringReplace(path_dir_i,"🇳🇴","")
+    path_yt_title = remove_non_ascii(path_yt_title)
+    #print("pathh_yt_title: "+path_yt_title)
     
     if path_dir_i == path_yt_title:
 #        print("This 2 are the same")
