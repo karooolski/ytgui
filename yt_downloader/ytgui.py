@@ -1,6 +1,7 @@
 # GUI -------------------------------------
 import tkinter
 from tkinter import ttk
+from tkinter import messagebox as msg
 #from tkinter import messagebox, filedialog # TODO may be useful in the future
 import tkinter.font as font
 # PYTUBE API ------------------------------
@@ -14,6 +15,8 @@ import requests
 # System :: If file exists -------------------------------
 import os.path
 from os.path import exists
+# System :: making before exit action (saving log)
+# import atexit
 # EDIT METADATA of the file -----------------------------
 import eyed3
 from eyed3.id3.frames import ImageFrame
@@ -61,12 +64,14 @@ gui_font_size = 15
 # # Download Functions : Audios 
 # -----------------------------
 
-def download_mp3_audio_with_thumbnail(link,SAVE_PATH): 
-    link = playlistOrNot(link,"single_video")
+def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
+    log("download_mp3_audio_with_thumbnail()") 
+    if ( playlistOrNot(link,"single_video") == False):
+        return 
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
     except:
-         ("mp3 download connection error")
+         log("mp3 download connection error")
     try:
         print_info_downloading_single_file(yt.title,link)
         audio = download_audio(yt,"mp3", SAVE_PATH)
@@ -75,7 +80,7 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            print("couldnt convert mp4 to mp3")
+            log("couldnt convert mp4 to mp3")
         try: 
             # download video thumbnail
             yt_image = requests.get(yt.thumbnail_url)
@@ -95,18 +100,20 @@ def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
             remove_file(SAVE_PATH,"thumbnail.jpg")
             # you can see a thumbnail using VLC media player, or something else
         except:
-            print("Couldn`t make an image to file "+file_path)
+            log("Couldn`t make an image to file "+file_path)
     except:
-        print("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
+        log("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
 
 def download_mp4_audio(link,SAVE_PATH):
-    link = playlistOrNot(link,"single_video")
+    log("download_mp4_audio()")
+    if ( playlistOrNot(link,"single_video") == False):
+        return 
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
         print_info_downloading_single_file(yt.title,link)
         yt.streams.get_audio_only("mp4").download(SAVE_PATH)
     except:
-        print("yt.streams.get_audio_only: error!")
+        log("yt.streams.get_audio_only: error!")
 
 # Usage: download video in 1080p and merge with audio
 def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
@@ -118,24 +125,26 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
         yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
     except: 
-        print("Download audio failed")
+        log("Download audio failed")
 
 def download_mp3_audio(link,SAVE_PATH):
-    link = playlistOrNot(link,"single_video")
+    log("download_mp3_audio")
+    if ( playlistOrNot(link,"single_video") == False):
+        return 
     try:
          yt = YouTube(link,on_progress_callback=on_progress)
          print_info_downloading_single_file(yt.title,link)
     except:
-         ("mp3 download connection error")
+         log("mp3 download connection error")
     try:
         audio = download_audio(yt,"mp3", SAVE_PATH)
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            print("couldnt convert mp4 to mp3")
+            log("couldnt convert mp4 to mp3")
     except:
-        print("audio mp3 dowloading error!")
+        log("audio mp3 dowloading error!")
 
 
 # # Download Functions : Videos
@@ -143,14 +152,16 @@ def download_mp3_audio(link,SAVE_PATH):
 
 # Usage: download video in 1080p and merge with audio
 def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
+    log("downloadVideo_1080p_toBeMerged")
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
         print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
-        print("Download video failed")    
+        log("Download video failed")    
 
 # usage: downloading mp3
+# inner function for other functions
 def download_audio(yt: YouTube, file_type: str, downloads_path: str):
     try:
         #print_info_downloading_single_file(yt.title)
@@ -162,25 +173,30 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
         audio.download(downloads_path)
         return audio # returning audiofile (mp4) to be converted to mp3 
     except: 
-        print("download video (function) error!")
+        log("download video (function) error!")
 
 def download_video_720pMAX(link,SAVE_PATH):
+    log("download_video_720pMAX()")
+    if ( playlistOrNot(link,"single_video") == False):
+        return 
     try: 
         yt = YouTube(link,on_progress_callback=on_progress)
         print_info_downloading_single_file(yt.title,link) 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
     except: 
-        print("download_video_720pMAX error!\n Do you set the PATH correctly?")
+        log("download_video_720pMAX error!\n Do you set the PATH correctly?")
 
 def download_video_LQ(link,SAVE_PATH):
-    link = playlistOrNot(link,"single_video")
+    log("download_video_LQ")
+    if ( playlistOrNot(link,"single_video") == False):
+        return 
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
         print_info_downloading_single_file(yt.title)
         stream = yt.streams.first()
         stream.download(SAVE_PATH)
     except:
-        print("download_video_LQ: error!")
+        log("download_video_LQ: error!")
 
 def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
     try:
@@ -188,14 +204,16 @@ def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
         print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res=rezolution, progressive=False).first().download(SAVE_PATH)
     except: 
-        print("Download video in ",str(rezolution),"p failed")
+        log("Download video in "+str(rezolution)+"p failed")
 
 
 # # Download Functions : Playlists : Videos
 # -----------------------------------------
 
 def download_video_playlist_720pMAX(link,SAVE_PATH):
-    link = playlistOrNot(link,"playlist")
+    log("download_video_playlist_720pMAX()")
+    if ( playlistOrNot(link,"playlist") == False ):
+        return
     try:
         playlist = Playlist(link)
         count_ = 1
@@ -209,12 +227,14 @@ def download_video_playlist_720pMAX(link,SAVE_PATH):
                 yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
                 count_ += 1
             except:
-                print("download_video_playlist_720pMAX: fail during downloading, does video has age restictions?")
+                log("download_video_playlist_720pMAX: fail during downloading, does video has age restictions?")
     except:
-        print("download_video_playlist_720pMAX: error!")  
+        log("download_video_playlist_720pMAX: error!")  
 
 def download_video_playlist_LQ(link,SAVE_PATH):
-    link = playlistOrNot(link,"playlist")
+    log("download_video_playlist_LQ()")
+    if ( playlistOrNot(link,"playlist") == False ):
+        return
     try:
         playlist = Playlist(link)
         count_ = 1
@@ -229,16 +249,18 @@ def download_video_playlist_LQ(link,SAVE_PATH):
                 stream.download(SAVE_PATH)
                 count_ += 1
             except:
-                print("download_video_playlist_720pMAX: fail during downloading")
+                log("download_video_playlist_720pMAX: fail during downloading")
     except:
-        print("download_video_playlist_720pMAX: error!")  
+        log("download_video_playlist_720pMAX: error!")  
 
 # # Download Functions : Playlists : Audios
 #------------------------------------------
 
 def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
+    log("download_mp3_audio_playlist_with_thumbnails()")
     try:
-        link = playlistOrNot(link,"playlist")
+        if ( playlistOrNot(link,"playlist") == False ):
+            return
         playlist = Playlist(link)
         count_ = 1
         total = str(playlist.length)
@@ -263,11 +285,11 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
                     flag = 1
                 #print (dir[i],)
             if file_exists or flag == 1: #the same as : if  dir.__contains__(str(yt.title)+".mp3"): 
-                print("----File is already exists!---")
+                log("----File is already exists!---")
                 count_ += 1
                 # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
             else:    
-                print("file not exists: ")
+                # print("file not exists: ")
                 #os.system("pause")
                 try:
                     audio = download_audio(yt,"mp3", SAVE_PATH)
@@ -275,7 +297,7 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
                     file_path = convert_to_mp3_with_metadata(file_path)
                     count_ += 1
                 except:
-                    print("some problem occured during dowloading!")
+                    log("some problem occured during dowloading!")
                 try:
                     yt_image = requests.get(yt.thumbnail_url) # download video thumbnail  
                     with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
@@ -291,18 +313,20 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
                     try:
                         tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
                     except:
-                        print("couldnt make an image by using tag")
+                        log("couldnt make an image by using tag")
                     tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
                     remove_file(SAVE_PATH,"thumbnail.jpg")             
                 except:
-                    print("Couldn`t make an image to file "+file_path)
+                    log("Couldn`t make an image to file "+file_path)
     except:
-        print("Erorr during downloading palylist")
+        log("Erorr during downloading palylist")
         print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")          
 
 def download_mp3_audio_playlist(link,SAVE_PATH):
+    log("download_mp3_audio_playlist")
     try:
-        link = playlistOrNot(link,"playlist")
+        if ( playlistOrNot(link,"playlist") == False ):
+            return
         playlist = Playlist(link)
         count_ = 1
         total = str(playlist.length)
@@ -316,15 +340,17 @@ def download_mp3_audio_playlist(link,SAVE_PATH):
                 file_path = convert_to_mp3_with_metadata(file_path)
                 count_ += 1
             except:
-                print("download_mp3_audio_playlist_f(): some problem occured during dowloading!")
+                log("download_mp3_audio_playlist_f(): some problem occured during dowloading!")
     except:
-        print("Erorr during downloading palylist")
-        print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")  
+        log("Erorr during downloading palylist")
+        log("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")  
 
 
 def download_mp4_audio_playlist(link,SAVE_PATH):
+    log("download_mp4_audio_playlist")
     try:
-        link = playlistOrNot(link,"playlist")
+        if ( playlistOrNot(link,"playlist") == False ):
+            return
         playlist = Playlist(link)
         count_ = 1
         total = str(playlist.length)
@@ -335,13 +361,13 @@ def download_mp4_audio_playlist(link,SAVE_PATH):
                 print_info_downloading_playlist(str(count_),total,video.title,temp_link)
                 try:
                     yt.streams.get_audio_only("mp4").download(SAVE_PATH)
-                except: print("download_mp4_audio_playlist: Stream download error")
+                except: log("download_mp4_audio_playlist: Stream download error")
                 count_ += 1
             except:
-                print("some problem occured during dowloading!")
+                log("some problem occured during dowloading!")
     except:
-        print("Erorr during downloading palylist")
-        print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
+        log("Erorr during downloading palylist")
+        log("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
 
 # # Editing Files Functions
 # -------------------------
@@ -361,9 +387,9 @@ def merge_video_with_audio():
         ffmpeg.output(audio, video,merged_video_path).run(overwrite_output=True)
         remove_file(SAVE_PATH,"videomerge.mp4")
         remove_file(SAVE_PATH,"audiomerge.mp4")
-        print("Merge ended successfully")
+        log("Merge ended successfully")
     except:
-        print("Merge failed")
+        log("Merge failed")
 
 # usage: downloading mp3
 def convert_to_mp3_with_metadata(file_path: str) -> str:
@@ -378,11 +404,11 @@ def convert_to_mp3_with_metadata(file_path: str) -> str:
                 try:
                     os.remove(file_path.replace("mp3", "mp4")) # remove mp4 file
                     return file_path
-                except: print("couldnt remove mp4 temporary file")
-            except: print("couldnt write and close audiofile")
-        except: print("couldnt make AdioFileClip")
+                except: log("couldnt remove mp4 temporary file")
+            except: log("couldnt write and close audiofile")
+        except: log("couldnt make AdioFileClip")
     except:
-        print("convert_to_mp3_with_metadata function error!")
+        log("convert_to_mp3_with_metadata function error!")
 
 # # inside functions 
 # -------------------
@@ -422,11 +448,39 @@ def time_now():
     date_time = stringReplace(date_time,'/','.')    
     return date_time
 
-def print_info_downloading_single_file(video_title : str, video_link : str):
-    print(time_now()," downloading ",video_title," ", video_link)
+def log_file_name():
+    now =  datetime.now()
+    date_time = now.strftime("%Y %m %d, %H %M %S")   
+    return date_time
 
-def print_info_downloading_playlist(count_: str, total: str , video_title : str , video_link : str):  
-    print(time_now()," downloading (",str(count_),"/",str(total),") ",video_title," ",video_link)
+def log(infos : str):
+    print(infos) # for user during downloading
+    logs.append(remove_non_ascii(infos)+"\n")
+
+def make_log(logs:list):
+    try:
+        logfilename= log_file_name()
+        file = open("logs/"+logfilename+".txt","w")
+        for i in range (len(logs)):
+            file.write(str(logs[i]))
+        file.close()
+    except FileNotFoundError:
+        os.makedirs("logs")
+        make_log(logs)
+    except: 
+        print("make_log(): some problem occured!")
+
+def exit_handler(): # it should have been for saving log file but didnt worked 
+    print("test before xit")
+    
+
+def print_info_downloading_single_file(video_title : str, video_link : str):
+        info = time_now()+" downloading "+video_title+" "+video_link
+        log(info)
+        
+def print_info_downloading_playlist(count_: str, total: str , video_title : str , video_link : str):
+    info = time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+video_title+" "+video_link
+    log(info)
 
 def playlistOrNot(linkk,confirm):
     print("checking playlist or single video:")
@@ -434,15 +488,15 @@ def playlistOrNot(linkk,confirm):
     if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
         print("playlist confirmed")
         print("--------------------------------")
-        
-        return link
+        return True
     if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and confirm == "single_video":
         print("single video confirmed")
         print("--------------------------------")
-        return link
+        return True
     else:
-        print("UserErorr: link adressing playlist, not one film")
-        return ' ' # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
+        msg.showinfo(title="err", message="UserErorr: link adressing playlist, not one film or vice versa")
+        print("UserErorr: link adressing playlist, not one film or vice versa")
+        return False # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
 
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else '' for i in text])
@@ -521,8 +575,8 @@ def startDownloading():
     link = textBoxDownloadLink.get(1.0, "end-1c")
     #label_download.config(text = "Provided Input: "+link)  
     chosen_plan = Combobox.get()
-    print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
-    print("--------------------------------")
+    #print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
+    #print("--------------------------------")
     
     if chosen_plan == "video 720p MAX":
         download_video_720pMAX(link,SAVE_PATH)
@@ -562,6 +616,10 @@ def startDownloading():
     if chosen_plan == "video playlist (Lowest quality)":
         download_video_playlist_LQ(link,SAVE_PATH) 
 
+    print("Downloading endend")
+    logs.append("end "+time_now())
+    make_log(logs)
+    
 #def browse(): # TODO , not working yet
 #    global SAVE_PATH
 #    try:
@@ -581,11 +639,12 @@ global SAVE_PATH
 SAVE_PATH = ""
 global link 
 link = ""
+logs = []
 
 
 
 def main():
-
+            #f.write(info)
     global textBoxPath
     global ButtonDownload
     global labelPath
@@ -593,7 +652,7 @@ def main():
     global Combobox
 
     print(time_now())
-
+    log("start "+time_now()+"\n")
     # Top level window -------------------------
 
     frame = tkinter.Tk()
@@ -662,4 +721,7 @@ def main():
 
     frame.mainloop()
 
+    
+
 main()
+#atexit.register(exit_handler)
