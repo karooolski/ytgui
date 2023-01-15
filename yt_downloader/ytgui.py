@@ -473,6 +473,23 @@ def make_log(logs:list):
 def exit_handler(): # it should have been for saving log file but didnt worked 
     print("test before xit")
     
+# usage: remember last save location (SAVE_PATH)
+# update or create file with new content (old content erased)
+def updateFile(filename : str, content : str):
+    file = open(filename,"w")
+    file.write(content)
+    file.close()
+
+# usage: remember last save location (SAVE_PATH)    
+def read_file(filename : str):
+    try:
+        file = open(filename, 'r')
+        content = file.read()
+        file.close()
+        return content
+    except FileNotFoundError:
+        updateFile(filename,"set path here")
+        return "set path here"
 
 def print_info_downloading_single_file(video_title : str, video_link : str):
         info = time_now()+" downloading "+video_title+" "+video_link
@@ -565,6 +582,7 @@ def enableDownloadButton():
 def buttonActionConfirmThePath():
     global SAVE_PATH
     SAVE_PATH = textBoxPath.get(1.0, "end-1c")
+    updateFile("last_location.txt",SAVE_PATH)
     SAVE_PATH = change_backslashes(SAVE_PATH)
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
@@ -615,9 +633,8 @@ def startDownloading():
         
     if chosen_plan == "video playlist (Lowest quality)":
         download_video_playlist_LQ(link,SAVE_PATH) 
-
-    print("Downloading endend")
-    logs.append("end "+time_now())
+        
+    log("Downloading endend "+time_now()+"\n---------------------------------------")
     make_log(logs)
     
 #def browse(): # TODO , not working yet
@@ -664,6 +681,9 @@ def main():
     # textbox for the path ----------------------
 
     textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
+    last_location = read_file("last_location.txt")
+    textBoxPath.configure(background="#FFFFFF")
+    textBoxPath.insert("end-1c",last_location)
     textBoxPath.pack()
 
     # Label with info <enetering the path> ------
