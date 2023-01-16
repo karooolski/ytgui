@@ -2,7 +2,13 @@
 import tkinter
 from tkinter import ttk
 from tkinter import messagebox as msg
-#from tkinter import messagebox, filedialog # TODO may be useful in the future
+
+from tkinter import filedialog # for browse button, 
+# if you have google drive file stream isntalled on your PC it may output  
+# <DATE> [17452:ShellIpcClient] shell_ipc_client.cc:129:Connect Can't connect to socket at: \\.\Pipe\GoogleDriveFSPipe_<USER>_shell
+# during browsing files, for now I dont know how to surpass it in safe way 
+# the same output is being produced during using alternative filedialog from PySimpleGUI lib
+ 
 import tkinter.font as font
 # PYTUBE API ------------------------------
 from pytube import Playlist
@@ -15,8 +21,7 @@ import requests
 # System :: If file exists -------------------------------
 import os.path
 from os.path import exists
-# System :: making before exit action (saving log)
-# import atexit
+# import atexit # System :: making before exit action (saving log)
 # EDIT METADATA of the file -----------------------------
 import eyed3
 from eyed3.id3.frames import ImageFrame
@@ -34,6 +39,9 @@ from moviepy.audio.io import AudioFileClip
 from moviepy.audio.AudioClip import *  # write_audiofile
 from moviepy.audio.io.AudioFileClip import * # close
 
+import threading
+
+
 class DownloadType:
     downloadTypes = [
         "video 720p MAX",
@@ -50,7 +58,7 @@ class DownloadType:
         "video playlist (Lowest quality)"
     ]
 
-# # GUI options 
+# # GUI     
 #---------------
 
 ASCI_grey = "#808080"
@@ -60,52 +68,42 @@ TEXT_collor = "white"
 TEXT_warning = "red"
 gui_font = 'Helvetica'
 gui_font_size = 15
+frame_title = "ytgui : YouTube Audio / Video Downloader"
+frame_geometry="500x385"
 
 # # Download Functions : Audios 
 # -----------------------------
 
-def download_mp3_audio_with_thumbnail(link,SAVE_PATH):
+def download_mp3_audio_with_thumbnail(link : str,SAVE_PATH : str):
     log("download_mp3_audio_with_thumbnail()") 
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"single_video") == False):
         return 
-    try:
-         yt = YouTube(link,on_progress_callback=on_progress)
-    except:
-         log("mp3 download connection error")
+    
+    yt = YouTube(link,on_progress_callback=on_progress)
+
     try:
         print_info_downloading_single_file(yt.title,link)
+        
+        if fileExsists(SAVE_PATH,yt.title):
+            log("----File is already exists!---")
+            msg.showinfo(title="information", message="File is already exists in current path")
+            return 
+         
         audio = download_audio(yt,"mp3", SAVE_PATH)
         file_path = ""
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            log("couldnt convert mp4 to mp3")
-        try: 
-            # download video thumbnail
-            yt_image = requests.get(yt.thumbnail_url)
-            with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
-                f.write(yt_image.content)
-            # convert audio meta data
-            audiofile = eyed3.load(file_path)
-            if not audiofile.tag:
-                audiofile.initTag()
-            tag = id3.Tag()
-            tag.parse(file_path)
-            tag.title = yt.title
-            tag.artist = yt.author
-            tag.artist_url = link
-            tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
-            tag.save(version=eyed3.id3.ID3_V2_3)
-            remove_file(SAVE_PATH,"thumbnail.jpg")
-            # you can see a thumbnail using VLC media player, or something else
-        except:
-            log("Couldn`t make an image to file "+file_path)
+            log("couldn`t convert mp4 to mp3")
+        set_meta_data(yt, SAVE_PATH, file_path , link, "single_video" , "None" )
     except:
         log("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
 
 def download_mp4_audio(link,SAVE_PATH):
     log("download_mp4_audio()")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"single_video") == False):
         return 
     try:
@@ -129,13 +127,13 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
 
 def download_mp3_audio(link,SAVE_PATH):
     log("download_mp3_audio")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"single_video") == False):
         return 
-    try:
-         yt = YouTube(link,on_progress_callback=on_progress)
-         print_info_downloading_single_file(yt.title,link)
-    except:
-         log("mp3 download connection error")
+    yt = YouTube(link,on_progress_callback=on_progress)
+    if yt == False:
+        return
+    print_info_downloading_single_file(yt.title,link)
     try:
         audio = download_audio(yt,"mp3", SAVE_PATH)
         try:
@@ -153,8 +151,11 @@ def download_mp3_audio(link,SAVE_PATH):
 # Usage: download video in 1080p and merge with audio
 def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
     log("downloadVideo_1080p_toBeMerged")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
+        if yt == False: 
+            return 
         print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
@@ -177,6 +178,7 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
 
 def download_video_720pMAX(link,SAVE_PATH):
     log("download_video_720pMAX()")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"single_video") == False):
         return 
     try: 
@@ -188,6 +190,7 @@ def download_video_720pMAX(link,SAVE_PATH):
 
 def download_video_LQ(link,SAVE_PATH):
     log("download_video_LQ")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"single_video") == False):
         return 
     try:
@@ -212,6 +215,7 @@ def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
 
 def download_video_playlist_720pMAX(link,SAVE_PATH):
     log("download_video_playlist_720pMAX()")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"playlist") == False ):
         return
     try:
@@ -233,6 +237,7 @@ def download_video_playlist_720pMAX(link,SAVE_PATH):
 
 def download_video_playlist_LQ(link,SAVE_PATH):
     log("download_video_playlist_LQ()")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     if ( playlistOrNot(link,"playlist") == False ):
         return
     try:
@@ -256,8 +261,9 @@ def download_video_playlist_LQ(link,SAVE_PATH):
 # # Download Functions : Playlists : Audios
 #------------------------------------------
 
-def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
+def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
     log("download_mp3_audio_playlist_with_thumbnails()")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     try:
         if ( playlistOrNot(link,"playlist") == False ):
             return
@@ -269,25 +275,11 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             file_path = ""
             print_info_downloading_playlist(str(count_),total,video.title,temp_link)
-            
-            # second way to find a file: 
-            path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt.title ) + ".mp3" ) 
-            file_exists = exists(path_to_file)
-            # if file_exists :
-            
-            flag = 0 # flag idicates if the name of the yt.title and a file in the SAVE_PATH are the same
-            
-            dir = os.listdir(SAVE_PATH)
-            # way to print dir: 
-            for i in range(len(dir)): # iterate thorough filenames in SAVE_PATH location to see if there are some copies 
-                if This_Two_Are_The_Same(dir[i],yt.title):
-                    #print("-------THESE FILES ARE THE SAME--------")
-                    flag = 1
-                #print (dir[i],)
-            if file_exists or flag == 1: #the same as : if  dir.__contains__(str(yt.title)+".mp3"): 
+             
+            if fileExsists(SAVE_PATH,yt.title):
                 log("----File is already exists!---")
                 count_ += 1
-                # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
+                # fixed: finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
             else:    
                 # print("file not exists: ")
                 #os.system("pause")
@@ -298,32 +290,14 @@ def download_mp3_audio_playlist_with_thumbnails(link,SAVE_PATH):
                     count_ += 1
                 except:
                     log("some problem occured during dowloading!")
-                try:
-                    yt_image = requests.get(yt.thumbnail_url) # download video thumbnail  
-                    with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
-                        f.write(yt_image.content)
-                    audiofile = eyed3.load(file_path) # convert audio meta data
-                    if not audiofile.tag:
-                        audiofile.initTag()   
-                    tag = id3.Tag()    
-                    tag.parse(file_path)
-                    tag.title = yt.title
-                    tag.artist = yt.author
-                    tag.artist_url = link
-                    try:
-                        tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
-                    except:
-                        log("couldnt make an image by using tag")
-                    tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
-                    remove_file(SAVE_PATH,"thumbnail.jpg")             
-                except:
-                    log("Couldn`t make an image to file "+file_path)
+                set_meta_data(yt, SAVE_PATH, file_path , link, "playlist" , playlist.title )
     except:
         log("Erorr during downloading palylist")
-        print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")          
+        print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")     
 
 def download_mp3_audio_playlist(link,SAVE_PATH):
     log("download_mp3_audio_playlist")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     try:
         if ( playlistOrNot(link,"playlist") == False ):
             return
@@ -348,6 +322,7 @@ def download_mp3_audio_playlist(link,SAVE_PATH):
 
 def download_mp4_audio_playlist(link,SAVE_PATH):
     log("download_mp4_audio_playlist")
+    log("Downloading started "+time_now()+"\n---------------------------------------")
     try:
         if ( playlistOrNot(link,"playlist") == False ):
             return
@@ -410,8 +385,56 @@ def convert_to_mp3_with_metadata(file_path: str) -> str:
     except:
         log("convert_to_mp3_with_metadata function error!")
 
+
+# setting metadata for mp3 file: information , albulm image
+def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, mode :str , playlist_title : str ):
+    # mode : "playlist" during dowloading from playlist or other if downloading single file 
+    try:
+        yt_image = requests.get(yt.thumbnail_url) # download video thumbnail  
+        with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
+            f.write(yt_image.content)
+        audiofile = eyed3.load(file_path) # convert audio meta data
+        if not audiofile.tag:
+            audiofile.initTag()   
+        tag = id3.Tag()    
+        tag.parse(file_path)
+        tag.title = yt.title
+        tag.artist = yt.author
+        tag.artist_url = link
+        if mode == "playlist":
+            tag.album = playlist_title
+        try:
+            tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
+        except:
+            log("couldnt make an image by using tag")
+        tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
+        remove_file(SAVE_PATH,"thumbnail.jpg")             
+    except:
+        log("Couldn`t make an image to file "+file_path)
+
+
 # # inside functions 
 # -------------------
+
+def fileExsists( SAVE_PATH : str , yt_title : str):
+     # second way to find a file: 
+    path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt_title ) + ".mp3" ) 
+    file_exists = exists(path_to_file)
+    # if file_exists :
+    flag = 0 # flag idicates if the name of the yt.title and a file in the SAVE_PATH are the same
+    
+    dir = os.listdir(SAVE_PATH)
+    # way to print dir: 
+    for i in range(len(dir)): # iterate thorough filenames in SAVE_PATH location to see if there are some copies 
+        if This_Two_Are_The_Same(dir[i],yt_title):
+            #print("-------THESE FILES ARE THE SAME--------")
+            flag = 1
+        #print (dir[i],)
+    if file_exists or flag == 1: #the same as : if  dir.__contains__(str(yt.title)+".mp3"): 
+        return True
+        log("----File is already exists!---")
+        # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
+    return False
 
 # this program also need '/' slashes in the path like in linux instead "\"
 def change_backslashes(word):
@@ -471,9 +494,9 @@ def make_log(logs:list):
         print("make_log(): some problem occured!")
 
 def exit_handler(): # it should have been for saving log file but didnt worked 
-    print("test before xit")
+    print("test before exit")
     
-# usage: remember last save location (SAVE_PATH)
+    # usage: remember last save location (SAVE_PATH)
 # update or create file with new content (old content erased)
 def updateFile(filename : str, content : str):
     file = open(filename,"w")
@@ -554,6 +577,7 @@ def This_Two_Are_The_Same(dir_i : str , yt_title):
     path_yt_title = stringReplace(path_yt_title,"\"","")
     path_yt_title = stringReplace(path_yt_title,":","")
     path_yt_title = stringReplace(path_yt_title,"#","")
+    path_yt_title = stringReplace(path_yt_title,"?","")
     path_yt_title = stringReplace(path_yt_title," ","")
     #path_yt_title = stringReplace(path_dir_i,"💙","")
     #path_yt_title = stringReplace(path_dir_i,"🇳🇴","")
@@ -586,10 +610,19 @@ def buttonActionConfirmThePath():
     SAVE_PATH = change_backslashes(SAVE_PATH)
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
+
+# prevent tkinter winodw from being freezed during downloading 
+def thread_download():
+    label_download.configure(text="Downloading in progress")
+    thread = threading.Thread(target=startDownloading)
+    thread.start()
+    # thread.join() # waiting until thread ends 
+    
     
 def startDownloading():
     global link 
     global SAVE_PATH
+    
     link = textBoxDownloadLink.get(1.0, "end-1c")
     #label_download.config(text = "Provided Input: "+link)  
     chosen_plan = Combobox.get()
@@ -633,20 +666,22 @@ def startDownloading():
         
     if chosen_plan == "video playlist (Lowest quality)":
         download_video_playlist_LQ(link,SAVE_PATH) 
-        
+    
+    label_download.configure(text=" ") 
     log("Downloading endend "+time_now()+"\n---------------------------------------")
     make_log(logs)
+    msg.showinfo(title="information", message="Download ended")     
     
-#def browse(): # TODO , not working yet
-#    global SAVE_PATH
-#    try:
-#        download = filedialog.askdirectory(initialdir="YOUR DIRECTORY PATH", title="Save Video")
-#        SAVE_PATH = download
-#        SAVE_PATH = change_backslashes(SAVE_PATH) # for windows usage 
-#        textBoxPath.configure(text=str(SAVE_PATH))
-#        print(SAVE_PATH)
-#    except:
-#        print("ygui: Browse (function) error!")
+def browse(): # TODO , not working yet 
+   global SAVE_PATH
+   try: 
+       browse_path = filedialog.askdirectory(initialdir="YOUR DIRECTORY PATH", title="Save Video")
+       SAVE_PATH = browse_path
+       SAVE_PATH = change_backslashes(SAVE_PATH) # for windows usage 
+       textBoxPath.delete("1.0","end")
+       textBoxPath.insert("end-1c",browse_path)
+   except:
+       log("ygui: browse(): anything hasn`t been setted")
         
 # -------|
 # # Main |
@@ -657,27 +692,33 @@ SAVE_PATH = ""
 global link 
 link = ""
 logs = []
-
-
+browse_path = ""
 
 def main():
-            #f.write(info)
+            
     global textBoxPath
     global ButtonDownload
     global labelPath
     global textBoxDownloadLink
     global Combobox
+    global label_download
 
     print(time_now())
     log("start "+time_now()+"\n")
+    
     # Top level window -------------------------
 
     frame = tkinter.Tk()
-    frame.title("YouTube Audio / Video Downloader")
-    frame.geometry('500x350')
+    frame.title(frame_title)
+    frame.geometry(frame_geometry)
     frame.configure(background=main_collor)
     myFont = font.Font(family=gui_font, size=gui_font_size)
 
+    # Browse Button -----------------------------
+
+    browseBtn = tkinter.Button(frame,text = "Browse", command = browse)
+    browseBtn.pack()
+    
     # textbox for the path ----------------------
 
     textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
@@ -692,26 +733,11 @@ def main():
     labelPath['font'] = myFont
     labelPath.pack()
 
-    # Button Creation
-
     # Button to confirm tha path ----------------
 
     ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
     ButtonPathConfirm['font'] = myFont
     ButtonPathConfirm.pack()
-
-    # Browse Button TODO -----------------------
-
-    # Label Creation
-    #browse_B = tkinter.Button(frame,text="Browse",command=Browse,width=10,bg="bisque",relief=GROOVE)
-    #browse_B.pack()
-    #browse_B.grid(row=3,
-    #              column=2,
-    #              pady=1,
-    #              padx=1)
-
-    #browseButton = tkinter.Button(frame,text="browse",command=browse)
-    #browseButton.pack()
 
     # Textbox for the link ----------------------
 
@@ -726,7 +752,7 @@ def main():
 
     # Button to confirm download ----------------
 
-    ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = startDownloading ) #buttonActionDownload
+    ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = thread_download ) #buttonActionDownload
     ButtonDownload.pack()
     ButtonDownload["state"] = "disabled"  # button is disabled at start 
     ButtonDownload['font'] = myFont
@@ -739,9 +765,20 @@ def main():
     frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
     Combobox.pack()
 
+    # Label with downloading info
+
+    label_download = tkinter.Label(frame,text=" ", background=main_collor,fg="#1aff1a")
+    label_download['font'] = myFont
+    label_download.pack()    
+    
+
     frame.mainloop()
 
     
 
 main()
+
+#thread.join() # wait until thread is executed
+
+
 #atexit.register(exit_handler)
