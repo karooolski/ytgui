@@ -1,3 +1,19 @@
+
+
+#============
+# my things: 
+*.mp3
+download
+else
+exe
+logs
+runtest.bat
+last_location.txt
+
+
+#============
+# template  : 
+
 # Prerequisites
 *.d
 

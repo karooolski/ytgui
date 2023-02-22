@@ -14,11 +14,13 @@ import tkinter.font as font
 from pytube import Playlist
 from pytube import YouTube 
 from pytube.cli import on_progress #this module contains the built in progress bar. (console)
+from pytube import Channel
 # System -------------------------------------------------
 import os
 from datetime import datetime
+import time # sleep
 import requests
-# System :: If file exists -------------------------------
+# System :: If file exists etc-------------------------------
 import os.path
 from os.path import exists
 # import atexit # System :: making before exit action (saving log)
@@ -40,7 +42,9 @@ from moviepy.audio.AudioClip import *  # write_audiofile
 from moviepy.audio.io.AudioFileClip import * # close
 
 import threading
+#import multiprocessing
 
+import urllib.request # check internet connection
 
 class DownloadType:
     downloadTypes = [
@@ -56,6 +60,7 @@ class DownloadType:
         "video in 1080p with no Voice",
         "video (Lowest quality)",
         "video playlist (Lowest quality)"
+        #"videos : whole channel 720p MAX"
     ]
 
 # # GUI     
@@ -69,7 +74,28 @@ TEXT_warning = "red"
 gui_font = 'Helvetica'
 gui_font_size = 15
 frame_title = "ytgui : YouTube Audio / Video Downloader"
-frame_geometry="500x385"
+frame_geometry="500x510"
+
+# # DEBUG : 
+#---------------
+
+make_logs = False
+show_cmd_details = False
+append_debug_details_to_logs = False
+auto_fill_SAVE_PATH = ""
+auto_fill_link_field = ""
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 # # Download Functions : Audios 
 # -----------------------------
@@ -85,7 +111,7 @@ def download_mp3_audio_with_thumbnail(link : str,SAVE_PATH : str):
     try:
         print_info_downloading_single_file(yt.title,link)
         
-        if fileExsists(SAVE_PATH,yt.title):
+        if fileExsists(SAVE_PATH,yt.title,link):
             log("----File is already exists!---")
             msg.showinfo(title="information", message="File is already exists in current path")
             return 
@@ -96,10 +122,18 @@ def download_mp3_audio_with_thumbnail(link : str,SAVE_PATH : str):
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            log("couldn`t convert mp4 to mp3")
+            log("Error: download_mp3_audio_with_thumbnail():couldn`t convert mp4 to mp3")
         set_meta_data(yt, SAVE_PATH, file_path , link, "single_video" , "None" )
+        
+        try:
+            files_links.append(link) # can be helpful if there are duplicates in playlist
+            files_names.append(yt.title+".mp3")
+        except:
+            log("Erorr: download_mp3_audio_with_thumbnail(): cant append downloaded data do list ") 
+        
+        
     except:
-        log("download_mp3_audio_with_thumbnail: (function) dowloading error!")    
+        log("download_mp3_audio_with_thumbnail: whole function send error message!")    
 
 def download_mp4_audio(link,SAVE_PATH):
     log("download_mp4_audio()")
@@ -264,36 +298,77 @@ def download_video_playlist_LQ(link,SAVE_PATH):
 def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
     log("download_mp3_audio_playlist_with_thumbnails()")
     log("Downloading started "+time_now()+"\n---------------------------------------")
+    problem_occured_during_downloading = False
+    file_exists_flag = False
     try:
         if ( playlistOrNot(link,"playlist") == False ):
             return
         playlist = Playlist(link)
         count_ = 1
         total = str(playlist.length)
-        for video in playlist.videos:
-            temp_link = video.watch_url
-            yt = YouTube(temp_link,on_progress_callback=on_progress)
-            file_path = ""
-            print_info_downloading_playlist(str(count_),total,video.title,temp_link)
-             
-            if fileExsists(SAVE_PATH,yt.title):
-                log("----File is already exists!---")
-                count_ += 1
-                # fixed: finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
-            else:    
-                # print("file not exists: ")
-                #os.system("pause")
+        try:
+            for video in playlist.videos:
+                temp_link = video.watch_url
+                yt = YouTube(temp_link,on_progress_callback=on_progress)    
+                file_path = ""
+                title = "title"
+                # interestingly, assigning a video title to a <string> variable can cause problems (eirher yt.title and video.title)
                 try:
-                    audio = download_audio(yt,"mp3", SAVE_PATH)
-                    file_path = os.path.join(SAVE_PATH,audio.default_filename) # 
-                    file_path = convert_to_mp3_with_metadata(file_path)
-                    count_ += 1
-                except:
-                    log("some problem occured during dowloading!")
-                set_meta_data(yt, SAVE_PATH, file_path , link, "playlist" , playlist.title )
+                    title = str(yt.title)    # no errors found if it is like that
+                except :
+                    try:
+                        title = str(video.title)
+                    except:
+                        title = "<can`t_get_title>"
+                try:
+                    #vid_title = video.title  
+                    #print_info_downloading_playlist(str(count_),total,vid_title,temp_link)
+                    inf =  (time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+title+" "+temp_link)
+                    log(inf)
+                except: 
+                    log("Error: download_mp3_audio_playlist_with_thumbnails(): print info error ")
+                try:
+                    debuglog("to fileExsists commes:"+" "+SAVE_PATH+" "+title+" "+temp_link)
+                    file_exists_flag = False
+                    file_exists_flag = fileExsists(SAVE_PATH,title,temp_link)
+                except: 
+                    log(bcolors.WARNING+"Error: "+bcolors.ENDC+"download_mp3_audio_playlist_with_thumbnails: file Exists flag error")
+                    log("I'm downloading just in case")
+                    file_exists_flag = False # its better to download it if it didnt existeed
+                if file_exists_flag == True:
+                    count_+=1
+                else:    #download: 
+                    try:
+                        audio = download_audio(yt,"mp3", SAVE_PATH)
+                        file_path = os.path.join(SAVE_PATH,audio.default_filename) # 
+                        file_path = convert_to_mp3_with_metadata(file_path)
+                        set_meta_data(yt, SAVE_PATH, file_path , temp_link, "playlist" , playlist.title )
+                        count_ += 1
+                        try:
+                            files_links.append(temp_link) # can be helpful if there are duplicates in playlist
+                            files_names.append(video.title+".mp3")
+                        except:
+                            log("Erorr: download_mp3_audio_playlist_with_thumbnails: cant append downloaded data do list ") 
+                    except:
+                        log("Error: download_mp3_audio_playlist_with_thumbnails: some problem occured during dowloading!")
+                        problem_occured_during_downloading = True
+        except:
+            log("Erorr: download_mp3_audio_playlist_with_thumbnails(): main loop error")
+           # print("wysylam temp_link do fileExists" + temp_link) 
+            
+                # fixed: finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
+           
     except:
-        log("Erorr during downloading palylist")
-        print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")     
+        log("erorr during downloading playlist <-- download_mp3_audio_playlist_with_thumbnails() : ")
+        
+    if (problem_occured_during_downloading):
+        log("sleep before next download")
+        time.sleep(20) # sleep 10 s
+        if(check_internet_connection()):
+            thread_download() # download again
+    
+    #print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")     
+
 
 def download_mp3_audio_playlist(link,SAVE_PATH):
     log("download_mp3_audio_playlist")
@@ -344,6 +419,22 @@ def download_mp4_audio_playlist(link,SAVE_PATH):
         log("Erorr during downloading palylist")
         log("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
 
+# for now (2023 02 22), pytube doesnt support channels staritng with with @ patterns 
+# def download_chanel_720pMAX(link,SAVE_PATH):
+#     log("download_chanel_720pMAX():")
+#     log("Downloading started "+time_now()+"\n---------------------------------------")
+#     print("elo")
+#     try:
+#         channel = Channel(link)
+#         #for video in channel.videos:
+#             #print("1")
+#             #print(video._title)
+#         #    yt = YouTube(video,on_progress_callback=on_progress)
+#         #    #print_info_downloading_single_file(yt.title,link) 
+#         #    video.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
+#     except:
+#         log("download_chanel_720pMAX: error")
+
 # # Editing Files Functions
 # -------------------------
 
@@ -393,6 +484,7 @@ def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, m
         yt_image = requests.get(yt.thumbnail_url) # download video thumbnail  
         with open(os.path.join(SAVE_PATH,"thumbnail.jpg"),'wb') as f: 
             f.write(yt_image.content)
+            f.close()
         audiofile = eyed3.load(file_path) # convert audio meta data
         if not audiofile.tag:
             audiofile.initTag()   
@@ -416,24 +508,95 @@ def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, m
 # # inside functions 
 # -------------------
 
-def fileExsists( SAVE_PATH : str , yt_title : str):
-     # second way to find a file: 
-    path_to_file = str ( str ( SAVE_PATH )  + "/" + str ( yt_title ) + ".mp3" ) 
-    file_exists = exists(path_to_file)
-    # if file_exists :
-    flag = 0 # flag idicates if the name of the yt.title and a file in the SAVE_PATH are the same
-    
-    dir = os.listdir(SAVE_PATH)
-    # way to print dir: 
-    for i in range(len(dir)): # iterate thorough filenames in SAVE_PATH location to see if there are some copies 
-        if This_Two_Are_The_Same(dir[i],yt_title):
-            #print("-------THESE FILES ARE THE SAME--------")
-            flag = 1
-        #print (dir[i],)
-    if file_exists or flag == 1: #the same as : if  dir.__contains__(str(yt.title)+".mp3"): 
+def check_internet_connection(host='http://google.com'):
+    try:
+        urllib.request.urlopen(host) #Python 3.x
         return True
-        log("----File is already exists!---")
-        # finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
+    except:
+        return False
+
+# those lists are used to find whether the file exists or not, searching by name or link for mp3 files 
+def fulfill_lists():
+    try:    
+        if int(files_names.__len__())<1 :
+            debuglog("appending infromation to lists")
+            try:
+                for filename in os.listdir(SAVE_PATH):
+
+                    if filename.__contains__(".mp4") or filename.__contains__(".mp3"):
+                       debuglog("appending \""+filename+"\"") 
+                       files_names.append(filename)
+
+                    if filename.__contains__(".mp3"):
+                         path = os.path.join(SAVE_PATH, filename)
+                         path = change_backslashes(path)
+                         #audiofile = eyed3.load(path)
+                         tag = id3.Tag()
+                         tag.parse(path)
+                         #if not tag.artist_url == None:
+                         debuglog("appending " + str(tag.artist_url) + " for \"" + filename +"\"")
+                         files_links.append(str(tag.artist_url))
+            except:
+                log("cant set tag to array"+filename)  
+    except:
+        log("fileExsists() error during getting gilenames")              
+    debuglog("fileExsists() : Setting infromation to lists ended.")
+
+def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
+    debuglog("---fileExsists(): start() ")
+    name_exists = False
+    link_exists = False
+    try:
+        # compare URL`s` from .mp3 files metadata from SAVE_PATH to video link that can be downloaded  
+        for i in range (len(files_links)):
+            if files_links[i] == link_to_video:
+                debuglog("file exists:(by a link) for "+link_to_video)
+                link_exists = True
+                break
+        
+        # checking if in SAVE_PATH exists file with the same filename as yt_title    
+        file_name = " "
+        for i in range (len(files_names)):
+            if This_Two_Are_The_Same(files_names[i], yt_title) or files_names[i] == yt_title: #files_names[i] == link_to_video:
+                file_name = files_names[i]
+                debuglog("file exists:(by tilte) for \""+yt_title+"\"")
+                name_exists = True
+                break
+        # Verdict:         
+        if name_exists and link_exists:
+            log(bcolors.WARNING+"------File Exists------(by name and link)"+bcolors.ENDC)
+            return True
+        elif not name_exists and link_exists: # f.ex. renamed arlier .mp3 files witch had the same name as others 
+            log("------File Exists------(by link only)")
+            return True
+        elif not name_exists and not link_exists:
+            #log("------File NOT Exists------(at all)")
+            return False
+        # next attempt: 
+        # there can can be a video with the same title but other content -> changing tittle to <title><date>:  
+        elif name_exists and not link_exists and not file_name.__contains__(".mp4"):                       
+            try:
+                type = " "
+                debuglog("filename: "+str(file_name))
+                if file_name.__contains__(".mp4"):
+                    type = ".mp4"
+                elif file_name.__contains__(".mp3"):
+                    type = ".mp3"
+                newname = str(str(file_name[:-3])+" "+time_now_clean()+str(type))
+                debuglog("newname: "+newname)
+                log("fileExsists(): name_exists and link not exists: renaming file")
+                os.rename(SAVE_PATH+"/"+file_name,SAVE_PATH+"/"+newname)    # so rename it 
+                log("------File NOT Exists but the same name existed earlier------")
+                return False                                         # and download file with the same name as one changed above
+            except: 
+                log("error: fileExsists(): cant rename a file")
+                return True # dont download, becaouse it would overwrite file with the other file
+        else:
+            log("------File NOT Exists------(Not supported case)")
+            return True     # case as above 
+        
+    except: log("cant find anything in arrays or even print them")
+    log("------File NOT Exists rare case------")
     return False
 
 # this program also need '/' slashes in the path like in linux instead "\"
@@ -471,18 +634,52 @@ def time_now():
     date_time = stringReplace(date_time,'/','.')    
     return date_time
 
-def log_file_name():
+def time_now_clean():
+    now =  datetime.now()
+    date_time = now.strftime("%Y %m %d, %H %M %S")   
+    return date_time
+
+# reuturns file name for a log file (current time as a filename)
+def log_filename():
     now =  datetime.now()
     date_time = now.strftime("%Y %m %d, %H %M %S")   
     return date_time
 
 def log(infos : str):
     print(infos) # for user during downloading
-    logs.append(remove_non_ascii(infos)+"\n")
-
-def make_log(logs:list):
     try:
-        logfilename= log_file_name()
+        logs.append(remove_non_ascii(infos)+"\n")
+    except: print(bcolors.WARNING+"ERORR: log(): adding to logs list error"+bcolors.ENDC)
+
+# dont show log info during downloading in cmd, but store it in log file
+def hiddenlog(infos : str):
+    try:
+        logs.append(remove_non_ascii(infos)+"\n")
+    except: print(bcolors.WARNING+"ERORR: hiddenlog(): adding to logs list error"+bcolors.ENDC)
+
+# for additional log infos 
+def debuglog(infos : str):
+    append = append_debug_details_to_logs
+    show = show_cmd_details
+    if(append and show):
+        log(infos)
+    elif(append and not show):
+        hiddenlog(infos)
+    elif(not append and show):
+        print(infos)
+
+# (debug) print additional information in cmd
+# for masive infos  
+def detail(*infos):
+    if show_cmd_details == True:
+        for info in infos:
+            print(info)
+    
+def make_log(logs:list):
+    if make_logs == False:
+        return 
+    try:
+        logfilename= log_filename()
         file = open("logs/"+logfilename+".txt","w")
         for i in range (len(logs)):
             file.write(str(logs[i]))
@@ -493,15 +690,18 @@ def make_log(logs:list):
     except: 
         print("make_log(): some problem occured!")
 
-def exit_handler(): # it should have been for saving log file but didnt worked 
+def exit_handler(): # TODO it should had been here for saving log file but havent worked yet
     print("test before exit")
     
-    # usage: remember last save location (SAVE_PATH)
+# usage: remember last save location (SAVE_PATH)
 # update or create file with new content (old content erased)
 def updateFile(filename : str, content : str):
-    file = open(filename,"w")
-    file.write(content)
-    file.close()
+    try:
+        file = open(filename,"w")
+        file.write(content)
+        file.close()
+    except:
+        log(bcolors.WARNING+"Erorr: updateFile()"+bcolors.ENDC)
 
 # usage: remember last save location (SAVE_PATH)    
 def read_file(filename : str):
@@ -519,8 +719,13 @@ def print_info_downloading_single_file(video_title : str, video_link : str):
         log(info)
         
 def print_info_downloading_playlist(count_: str, total: str , video_title : str , video_link : str):
-    info = time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+video_title+" "+video_link
-    log(info)
+    info = "time_info"
+    try:
+        info = time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+video_title+" "+video_link
+    except: print("error: print_info_downloading_playlist(): making info error")
+    try:
+        log(info)
+    except: print ("error: print_info_downloading_playlist(): making log error") 
 
 def playlistOrNot(linkk,confirm):
     print("checking playlist or single video:")
@@ -538,63 +743,86 @@ def playlistOrNot(linkk,confirm):
         print("UserErorr: link adressing playlist, not one film or vice versa")
         return False # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
 
+
+def remove_unnecesary_chars(text : str):
+    text = stringReplace(text,".","")
+    text = stringReplace(text,",","")
+    text = stringReplace(text,"|","")
+    text = stringReplace(text,"/","")
+    text = stringReplace(text,"`","")
+    text = stringReplace(text,"'","")
+    text = stringReplace(text,"\"","")
+    text = stringReplace(text,":","")
+    text = stringReplace(text,"#","")
+    text = stringReplace(text,"?","")
+    text = stringReplace(text," ","")
+    #text = stringReplace(text,"💙","") remove_non_ascii(): doing it 
+    #text = stringReplace(text,"🇳🇴","")
+    return text
+
 def remove_non_ascii(text):
     return ''.join([i if ord(i) < 128 else '' for i in text])
 
-def This_Two_Are_The_Same(dir_i : str , yt_title):
-    # example : 
-    # output : "CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver).mp3"
-    # yt.title:"CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver.).mp3"
-    # 
-    # And we dont want to donwnload again olny becaouse the name is different 
-    # So i am cutting off every character that after download is vanishing and caomparing names 
-    
-    path_dir_i = dir_i # this is oputput filename of converting file to a .mp3
-    path_dir_i = stringReplace(path_dir_i,".","")
-    path_dir_i = stringReplace(path_dir_i,",","")
-    path_dir_i = stringReplace(path_dir_i,"|","")
-    path_dir_i = stringReplace(path_dir_i,"/","")
-    path_dir_i = stringReplace(path_dir_i,"`","")
-    path_dir_i = stringReplace(path_dir_i,"'","")
-    path_dir_i = stringReplace(path_dir_i,"\"","")
-    path_dir_i = stringReplace(path_dir_i,":","")
-    path_dir_i = stringReplace(path_dir_i,"#","")
-    path_dir_i = stringReplace(path_dir_i," ","")
-    #path_dir_i = stringReplace(path_dir_i,"💙","")
-    #path_dir_i = stringReplace(path_dir_i,"🇳🇴","")
-    
-    path_dir_i = remove_non_ascii(path_dir_i) # this should be better than this both at the top
-    path_dir_i = path_dir_i[:-3] # removing 'mp3' (last characters at those strings)
-    #print("path_dir_i: "+path_dir_i)
-    
-    path_yt_title =  yt_title # this what yt.title returns
-    path_yt_title = stringReplace(path_yt_title,".","")
-    path_yt_title = stringReplace(path_yt_title,",","")
-    path_yt_title = stringReplace(path_yt_title,"|","")
-    path_yt_title = stringReplace(path_yt_title,"/","")
-    path_yt_title = stringReplace(path_yt_title,"`","")
-    path_yt_title = stringReplace(path_yt_title,"'","")
-    path_yt_title = stringReplace(path_yt_title,"\"","")
-    path_yt_title = stringReplace(path_yt_title,":","")
-    path_yt_title = stringReplace(path_yt_title,"#","")
-    path_yt_title = stringReplace(path_yt_title,"?","")
-    path_yt_title = stringReplace(path_yt_title," ","")
-    #path_yt_title = stringReplace(path_dir_i,"💙","")
-    #path_yt_title = stringReplace(path_dir_i,"🇳🇴","")
-    path_yt_title = remove_non_ascii(path_yt_title)
-    #print("pathh_yt_title: "+path_yt_title)
-    
-    if path_dir_i == path_yt_title:
-#        print("This 2 are the same")
-#        print(path_after_key)
-#        print(path_first_key)
-        return True
-    else:
-#        print("This 2 are NOT the same")
-#        print(path_dir_i)
-#        print(path_yt_title)
-        return False
+# compare two filenames
+# taking into account that during download some chacacters can be removed 
+def This_Two_Are_The_Same(dir_i_ : str , yt_title_):
+    try:
+        #debuglog("This_Two_Are_The_Same()?\""+dir_i_+"\" \""+yt_title_+"\"") # massive
 
+        # i want to edit those strings locally so i need to copy it
+        dir_i = dir_i_
+        yt_title = yt_title_
+        
+        # dir_i_ has ".mp3" because it is taken from filesystem and yt_title_ doesnt have that: 
+        dir_i = dir_i_[:-4] 
+        
+        # most common case : the names are exacly the same : 
+        if dir_i == yt_title:
+            debuglog("dir_i == yt_title: \""+dir_i+"\" \""+yt_title+"\"")
+            return True
+
+        # case :    "unnecesary chars"
+        # the names are the same but downloaded version is without some characters (that happens during download)
+        # example : During download "." can be removed as this one:  
+        # 
+        # downloaded verion  :"CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver).mp3"
+        # yt.title           :"CHAINSAW MAN - OP1 - Kick Back (Blinding Sunrise Cover Extended Ver.).mp3"
+        # 
+        # And we dont want to donwnload again olny becaouse the name is different 
+        # So i am cutting off every character that vanishes after download and comparing names 
+
+        dir_i = remove_unnecesary_chars(dir_i)
+        yt_title = remove_unnecesary_chars(yt_title)
+        
+        if dir_i == yt_title:
+            debuglog("dir_i == yt_title: after removed unnecesary chars \""+dir_i+"\" \""+yt_title+"\"")
+            return True
+
+        # case : title has other asci characters that can`t be cought by remove_unnecesary_chars()
+        
+        dir_i = remove_non_ascii(dir_i)
+        yt_title = remove_non_ascii(yt_title)
+
+        if dir_i == yt_title and not dir_i == "":
+            debuglog("dir_i == yt_title after removed non asci characters: \""+dir_i+"\" \""+yt_title+"\"")
+            return True
+
+        # case : if the title consist of only non asci character f.ex chinese/japanese titles
+        # then after removal there is nothing to compare, empty string 
+    
+        if (dir_i == yt_title and dir_i == ""):
+            debuglog("(dir_i == yt_title and dir_i ==\"\", nothing here: \""+dir_i+"\" \""+yt_title+"\"")
+            # it means remove_non_ascii() remved the whote title (whole title consisted of non asci characters)
+            # and can`t compare it`
+            return False
+
+        else:
+            
+            return False
+    except:
+        debuglog(bcolors.WARNING+"Error in This_Two_Are_The_Same() "+bcolors.ENDC) # massive if True
+    
+    return False
 
 # # Button Fucntions (Tkinter)
 # ----------------------------
@@ -611,13 +839,41 @@ def buttonActionConfirmThePath():
     labelPath.config(text = "Provided Input: "+SAVE_PATH)
     enableDownloadButton()
 
+def checkBoxAction_makeLogs( var ):
+    global make_logs
+    if int(var) == 1:
+        make_logs = True
+        print("checkBoxAction_makeLogs() ->  make_logs = true")
+    elif int(var) == 0:
+        make_logs = False
+        print("checkBoxAction_makeLogs() -> make_logs = false")
+
+def checkBoxAction_makeDetailedLogs( var ):
+    global append_debug_details_to_logs  
+    if int(var) == 1:
+        append_debug_details_to_logs = True
+        print("checkBoxAction_makeDetailedLogs() ->  append_debug_details_to_logs = true")
+    elif int(var) == 0:
+        append_debug_details_to_logs = False
+        print("checkBoxAction_makeDetailedLogs() -> append_debug_details_to_logs = false")
+
+def checkBoxAction_cmdDetails (var):
+    global show_cmd_details  
+    if int(var) == 1:
+        show_cmd_details = True
+        print("checkBoxAction_cmdDetails() ->  show_cmd_details = true")
+    elif int(var) == 0:
+        show_cmd_details = False
+        print("checkBoxAction_cmdDetails() -> show_cmd_details = false")
+
 # prevent tkinter winodw from being freezed during downloading 
+# or run multiple downloads at once (mess in logs)
 def thread_download():
+    files_links.clear()
+    files_names.clear()
+    fulfill_lists()
     label_download.configure(text="Downloading in progress")
-    thread = threading.Thread(target=startDownloading)
-    thread.start()
-    # thread.join() # waiting until thread ends 
-    
+    new_thread = threading.Thread(target=startDownloading).start()
     
 def startDownloading():
     global link 
@@ -667,8 +923,13 @@ def startDownloading():
     if chosen_plan == "video playlist (Lowest quality)":
         download_video_playlist_LQ(link,SAVE_PATH) 
     
+   # if chosen_plan == "videos : whole channel 720p MAX":
+   #     download_chanel_720pMAX(link,SAVE_PATH)
+    
+    
     label_download.configure(text=" ") 
     log("Downloading endend "+time_now()+"\n---------------------------------------")
+    #downloading_thread.join()
     make_log(logs)
     msg.showinfo(title="information", message="Download ended")     
     
@@ -693,6 +954,9 @@ global link
 link = ""
 logs = []
 browse_path = ""
+files_links = []
+files_names = []
+#downloading_thread = threading.Thread(target=startDownloading)
 
 def main():
             
@@ -702,6 +966,7 @@ def main():
     global textBoxDownloadLink
     global Combobox
     global label_download
+    global threads
 
     print(time_now())
     log("start "+time_now()+"\n")
@@ -717,14 +982,20 @@ def main():
     # Browse Button -----------------------------
 
     browseBtn = tkinter.Button(frame,text = "Browse", command = browse)
+    browseBtn['font'] = myFont
     browseBtn.pack()
     
     # textbox for the path ----------------------
 
     textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
-    last_location = read_file("last_location.txt")
+    if len(auto_fill_SAVE_PATH)>0:
+        auto_fill = auto_fill_SAVE_PATH
+        auto_fill = change_backslashes(auto_fill)
+        textBoxPath.insert("end-1c",auto_fill)
+    else:
+        last_location = read_file("last_location.txt")
+        textBoxPath.insert("end-1c",last_location)
     textBoxPath.configure(background="#FFFFFF")
-    textBoxPath.insert("end-1c",last_location)
     textBoxPath.pack()
 
     # Label with info <enetering the path> ------
@@ -742,13 +1013,15 @@ def main():
     # Textbox for the link ----------------------
 
     textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
+    if len(auto_fill_link_field)>0:
+        textBoxDownloadLink.insert("end-1c",auto_fill_link_field)
     textBoxDownloadLink.pack()
-
+ 
     # Label with info for the <confirm the path>
 
-    label_download = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
-    label_download['font'] = myFont
-    label_download.pack()
+    label_enterLink = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
+    label_enterLink['font'] = myFont
+    label_enterLink.pack()
 
     # Button to confirm download ----------------
 
@@ -756,29 +1029,74 @@ def main():
     ButtonDownload.pack()
     ButtonDownload["state"] = "disabled"  # button is disabled at start 
     ButtonDownload['font'] = myFont
-
+    
     # Combobox to choose an option of download---
 
-    dtt = DownloadType
-    Combobox=ttk.Combobox(frame,values=dtt.downloadTypes,width=30,state = "readonly",font=myFont)
-    Combobox.current(0) # show first option 
+    downloadType = DownloadType
+    Combobox=ttk.Combobox(frame,values=downloadType.downloadTypes,width=30,state = "readonly",font=myFont)
+    Combobox.current(2) # show first option 
     frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
     Combobox.pack()
 
-    # Label with downloading info
+    # Label with downloading info ---------------
 
     label_download = tkinter.Label(frame,text=" ", background=main_collor,fg="#1aff1a")
     label_download['font'] = myFont
     label_download.pack()    
-    
+
+    # checkBoxes to make logs -------------------------
+     
+    var1 = tkinter.IntVar() # if not this, the 2 checkboxes would be touched in 1 click (graphically)
+    var2 = tkinter.IntVar()
+    var3 = tkinter.IntVar()
+    c1 = tkinter.Checkbutton(frame, 
+                             text='make logs',
+                             variable=var1,
+                             onvalue=1,
+                             offvalue=0 ,
+                             background=main_collor,
+                             fg=TEXT_collor,
+                             selectcolor="blue",
+                             command=lambda:checkBoxAction_makeLogs(str(var1.get())) )
+    c1['font'] = myFont
+    c1.pack()
+    c2 = tkinter.Checkbutton(frame, 
+                             text='add debug details to logs',
+                             variable=var2, 
+                             onvalue=1,
+                             offvalue=0, 
+                             background=main_collor,
+                             fg=TEXT_collor,
+                             selectcolor="blue",
+                             command=lambda:checkBoxAction_makeDetailedLogs(str(var2.get())))
+    c2['font'] = myFont
+    c2.pack()
+    c3 = tkinter.Checkbutton(frame, 
+                         text='show debug details in cmd',
+                         variable=var3, 
+                         onvalue=1,
+                         offvalue=0, 
+                         background=main_collor,
+                         fg=TEXT_collor,
+                         selectcolor="blue",
+                         command=lambda:checkBoxAction_cmdDetails(str(var3.get())))
+    c3['font'] = myFont
+    #c3.select()
+    c3.pack()
+
+    frame.resizable(width=False, height=False)
 
     frame.mainloop()
-
     
-
+    #if downloading_thread.is_alive():
+    #    downloading_thread.join() # wait until thread is executed
+    
+    return 0
+    
 main()
 
-#thread.join() # wait until thread is executed
 
+
+#downloading_process.join()
 
 #atexit.register(exit_handler)
