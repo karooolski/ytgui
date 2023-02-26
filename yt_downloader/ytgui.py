@@ -46,6 +46,8 @@ import threading
 
 import urllib.request # check internet connection
 
+from sqlitedict import SqliteDict # simple database for storing user options locally: -----------------
+
 class DownloadType:
     downloadTypes = [
         "video 720p MAX",
@@ -96,6 +98,49 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+class UserConfig():
+    link  = ""
+    SAVE_PATH = " "
+    allow_logs = False
+    details_in_cmd  = False
+    details_in_loggs  = False
+    last_combobox_state = 0
+    
+    # default configuration
+    def __init__(self):
+        self.link = ""
+        self.SAVE_PATH = ""
+        self.allow_logs=False
+        self.details_in_cmd=False
+        self.details_in_loggs=False
+        self.last_combobox_state = 0
+
+    #@staticmethod
+    def saveConfiguration(self,key, value):             # save object with user configuration to existing cache file
+        cache_file="cache.sqlite3"
+        try:
+            with SqliteDict(cache_file) as mydict:
+                mydict[key] = value # Using dict[key] to store
+                mydict.commit() # Need to commit() to actually flush the data
+        except Exception as ex:
+            print("Error during storing data (Possibly unsupported):", ex)
+
+    #@staticmethod
+    def loadConfiguration(self,key):
+        cache_file="cache.sqlite3"
+        try:
+            with SqliteDict(cache_file) as mydict:
+                object_ = mydict[key] # No need to use commit(), since we are only loading data!
+            return object_
+        except Exception as ex:
+            debuglog("Creating new user configuration file :")
+            object_ = UserConfig()  # make new default config file if it didnt exist
+            object_.saveConfiguration(key,object_)
+            return object_ #mydict[key]
+
+    def returnDetailsInLogs(self):
+        return self.details_in_loggs
+
 
 # # Download Functions : Audios 
 # -----------------------------
@@ -145,7 +190,7 @@ def download_mp4_audio(link,SAVE_PATH):
         print_info_downloading_single_file(yt.title,link)
         yt.streams.get_audio_only("mp4").download(SAVE_PATH)
     except:
-        log("yt.streams.get_audio_only: error!")
+        errorLog("yt.streams.get_audio_only: error!")
 
 # Usage: download video in 1080p and merge with audio
 def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
@@ -157,7 +202,7 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
         yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
     except: 
-        log("Download audio failed")
+        errorLog("Error: downloadAudioToBeMerged(): Download audio failed")
 
 def download_mp3_audio(link,SAVE_PATH):
     log("download_mp3_audio")
@@ -174,9 +219,9 @@ def download_mp3_audio(link,SAVE_PATH):
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            log("couldnt convert mp4 to mp3")
+            errorLog("Error: download_mp3_audio(): couldnt convert mp4 to mp3")
     except:
-        log("audio mp3 dowloading error!")
+        errorLog("Error download_mp3_audio(): audio mp3 dowloading error!")
 
 
 # # Download Functions : Videos
@@ -193,7 +238,7 @@ def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
         print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
     except:
-        log("Download video failed")    
+        errorLog("Error: downloadVideo_1080p_toBeMerged(): Download video failed")    
 
 # usage: downloading mp3
 # inner function for other functions
@@ -208,7 +253,7 @@ def download_audio(yt: YouTube, file_type: str, downloads_path: str):
         audio.download(downloads_path)
         return audio # returning audiofile (mp4) to be converted to mp3 
     except: 
-        log("download video (function) error!")
+        errorLog("Error: download_audio(): download video (function) error!")
 
 def download_video_720pMAX(link,SAVE_PATH):
     log("download_video_720pMAX()")
@@ -220,7 +265,7 @@ def download_video_720pMAX(link,SAVE_PATH):
         print_info_downloading_single_file(yt.title,link) 
         yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH) 
     except: 
-        log("download_video_720pMAX error!\n Do you set the PATH correctly?")
+        errorLog("Error: download_video_720pMAX(): \n Did you set the PATH correctly? , PATH: "+SAVE_PATH)
 
 def download_video_LQ(link,SAVE_PATH):
     log("download_video_LQ")
@@ -455,7 +500,7 @@ def merge_video_with_audio():
         remove_file(SAVE_PATH,"audiomerge.mp4")
         log("Merge ended successfully")
     except:
-        log("Merge failed")
+        errorLog("Error: merge_video_with_audio(): Merge failed")
 
 # usage: downloading mp3
 def convert_to_mp3_with_metadata(file_path: str) -> str:
@@ -502,7 +547,7 @@ def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, m
         tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
         remove_file(SAVE_PATH,"thumbnail.jpg")             
     except:
-        log("Couldn`t make an image to file "+file_path)
+        errorLog("Couldn`t make an image to file "+file_path)
 
 
 # # inside functions 
@@ -537,9 +582,9 @@ def fulfill_lists():
                          debuglog("appending " + str(tag.artist_url) + " for \"" + filename +"\"")
                          files_links.append(str(tag.artist_url))
             except:
-                log("cant set tag to array"+filename)  
+                errorLog("cant set tag to array"+filename)  
     except:
-        log("fileExsists() error during getting gilenames")              
+        errorLog("fileExsists() error during getting filenames")              
     debuglog("fileExsists() : Setting infromation to lists ended.")
 
 def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
@@ -601,6 +646,8 @@ def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
 
 # this program also need '/' slashes in the path like in linux instead "\"
 def change_backslashes(word):
+    if len(word) == 0:
+        return ("")
     ex = '\\'
     l = list(word)
     for i in range(len(word)):
@@ -651,6 +698,12 @@ def log(infos : str):
         logs.append(remove_non_ascii(infos)+"\n")
     except: print(bcolors.WARNING+"ERORR: log(): adding to logs list error"+bcolors.ENDC)
 
+def errorLog(infos : str):
+    print(bcolors.WARNING + infos + bcolors.ENDC) # for user during downloading
+    try:
+        logs.append(remove_non_ascii(infos)+"\n")
+    except: print(bcolors.WARNING+"ERORR: log(): adding to logs list error"+bcolors.ENDC)
+    
 # dont show log info during downloading in cmd, but store it in log file
 def hiddenlog(infos : str):
     try:
@@ -665,8 +718,8 @@ def debuglog(infos : str):
         log(infos)
     elif(append and not show):
         hiddenlog(infos)
-    elif(not append and show):
-        print(infos)
+    elif(show and not append):
+        print("debug: " + infos)
 
 # (debug) print additional information in cmd
 # for masive infos  
@@ -688,11 +741,12 @@ def make_log(logs:list):
         os.makedirs("logs")
         make_log(logs)
     except: 
-        print("make_log(): some problem occured!")
+        errorLog("make_log(): some problem occured!")
 
 def exit_handler(): # TODO it should had been here for saving log file but havent worked yet
     print("test before exit")
     
+# old method of saving SAVE_PATH    
 # usage: remember last save location (SAVE_PATH)
 # update or create file with new content (old content erased)
 def updateFile(filename : str, content : str):
@@ -701,7 +755,7 @@ def updateFile(filename : str, content : str):
         file.write(content)
         file.close()
     except:
-        log(bcolors.WARNING+"Erorr: updateFile()"+bcolors.ENDC)
+        errorLog("Erorr: updateFile()")
 
 # usage: remember last save location (SAVE_PATH)    
 def read_file(filename : str):
@@ -728,20 +782,33 @@ def print_info_downloading_playlist(count_: str, total: str , video_title : str 
     except: print ("error: print_info_downloading_playlist(): making log error") 
 
 def playlistOrNot(linkk,confirm):
-    print("checking playlist or single video:")
-    print(link)
-    if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
-        print("playlist confirmed")
-        print("--------------------------------")
-        return True
-    if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and confirm == "single_video":
-        print("single video confirmed")
-        print("--------------------------------")
-        return True
-    else:
-        msg.showinfo(title="err", message="UserErorr: link adressing playlist, not one film or vice versa")
-        print("UserErorr: link adressing playlist, not one film or vice versa")
-        return False # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
+    try:
+        debuglog("checking playlist or single video and others: ")
+        print(link)
+        if link.__contains__('https://www.youtube.com/watch?v=') and link.__contains__('&list=') and confirm == "single_video":
+            debuglog("single_video confirmed inside playlist")
+            return True
+        if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
+            print("playlist confirmed")
+            print("--------------------------------")
+            return True
+        if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and link.__contains__("https://www.youtube.com/watch?v=") and confirm == "single_video":
+            print("single video confirmed")
+            print("--------------------------------")
+            return True
+        if link.__contains__('https://www.youtube.com/shorts/') and confirm == "single_video":
+            debuglog("downloading short")
+            return True
+        else:
+            msg.showinfo(title="Error", message="UserErorr: Propably you have entered some wrong input, check link and the path")
+            print("UserErorr: Propably you have entered some wrong input, check link and the path")
+            return False # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
+    except: 
+        errorLog("Error: playlistOrNot(): some problem occured")
+# sometimes you want to download a video during watching playlist
+# the link contains watch and list in the same but for 
+#def singleVideoFromPlaylist():
+    
 
 
 def remove_unnecesary_chars(text : str):
@@ -820,61 +887,92 @@ def This_Two_Are_The_Same(dir_i_ : str , yt_title_):
             
             return False
     except:
-        debuglog(bcolors.WARNING+"Error in This_Two_Are_The_Same() "+bcolors.ENDC) # massive if True
+        errorLog("Error: This_Two_Are_The_Same() ") # massive if True
     
     return False
 
 # # Button Fucntions (Tkinter)
 # ----------------------------
 
+def disableDownloadButton():
+    ButtonDownload["state"] = "disabled"
+
 def enableDownloadButton():
     if ButtonDownload["state"] == "disabled":
         ButtonDownload["state"] = "normal" #other options: active
 
 def buttonActionConfirmThePath():
-    global SAVE_PATH
-    SAVE_PATH = textBoxPath.get(1.0, "end-1c")
-    updateFile("last_location.txt",SAVE_PATH)
-    SAVE_PATH = change_backslashes(SAVE_PATH)
-    labelPath.config(text = "Provided Input: "+SAVE_PATH)
-    enableDownloadButton()
-
+    try: 
+        global SAVE_PATH
+        SAVE_PATH = textBoxPath.get(1.0, "end-1c")
+        #updateFile("last_location.txt",SAVE_PATH)
+        SAVE_PATH = change_backslashes(SAVE_PATH)
+        labelPath.config(text = "Provided Input: "+SAVE_PATH)
+        userConfig.SAVE_PATH = SAVE_PATH
+        debuglog("debug: buttonActionConfirmThePath: len(SAVE_PATH)=" + str(len(SAVE_PATH)))
+        if(len(SAVE_PATH)==0):
+            userConfig.SAVE_PATH = ""
+            msg.showinfo(title="information", message="Nothing has been typed!")
+            userConfig.saveConfiguration("userConfig",userConfig)
+            disableDownloadButton()
+            return  
+        userConfig.saveConfiguration("userConfig",userConfig)
+        enableDownloadButton()
+    except: 
+        errorLog("Error: buttonActionConfirmThePath()")
+    
 def checkBoxAction_makeLogs( var ):
     global make_logs
     if int(var) == 1:
         make_logs = True
-        print("checkBoxAction_makeLogs() ->  make_logs = true")
+        debuglog("checkBoxAction_makeLogs() ->  make_logs = true")
+        userConfig.allow_logs = True
+        userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
         make_logs = False
-        print("checkBoxAction_makeLogs() -> make_logs = false")
+        debuglog("checkBoxAction_makeLogs() -> make_logs = false")
+        userConfig.allow_logs = False
+        userConfig.saveConfiguration("userConfig",userConfig)
 
 def checkBoxAction_makeDetailedLogs( var ):
     global append_debug_details_to_logs  
+    global userConfig
     if int(var) == 1:
         append_debug_details_to_logs = True
-        print("checkBoxAction_makeDetailedLogs() ->  append_debug_details_to_logs = true")
+        debuglog("checkBoxAction_makeDetailedLogs() ->  append_debug_details_to_logs = true")
+        userConfig.details_in_loggs = True
+        userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
         append_debug_details_to_logs = False
-        print("checkBoxAction_makeDetailedLogs() -> append_debug_details_to_logs = false")
-
+        debuglog("checkBoxAction_makeDetailedLogs() -> append_debug_details_to_logs = false")
+        userConfig.details_in_loggs = False
+        userConfig.saveConfiguration("userConfig",userConfig)
+        
 def checkBoxAction_cmdDetails (var):
     global show_cmd_details  
+    global userConfig
     if int(var) == 1:
         show_cmd_details = True
-        print("checkBoxAction_cmdDetails() ->  show_cmd_details = true")
+        debuglog("checkBoxAction_cmdDetails() ->  show_cmd_details = true")
+        userConfig.details_in_cmd = True
+        userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
         show_cmd_details = False
-        print("checkBoxAction_cmdDetails() -> show_cmd_details = false")
+        debuglog("checkBoxAction_cmdDetails() -> show_cmd_details = false")
+        userConfig.details_in_cmd = False
+        userConfig.saveConfiguration("userConfig",userConfig)
 
 # prevent tkinter winodw from being freezed during downloading 
 # or run multiple downloads at once (mess in logs)
 def thread_download():
-    files_links.clear()
-    files_names.clear()
-    fulfill_lists()
-    label_download.configure(text="Downloading in progress")
-    new_thread = threading.Thread(target=startDownloading).start()
-    
+    try:
+        files_links.clear()
+        files_names.clear()
+        fulfill_lists()
+        label_download.configure(text="Downloading in progress")
+        new_thread = threading.Thread(target=startDownloading).start()
+    except: 
+        errorLog("Error: thread_download(): some problem occured")
 def startDownloading():
     global link 
     global SAVE_PATH
@@ -884,6 +982,30 @@ def startDownloading():
     chosen_plan = Combobox.get()
     #print("Try download a video\nlink: ",link,"\nSAVE_PATH:",SAVE_PATH)
     #print("--------------------------------")
+    
+    # Saving user options
+    
+    userConfig.link = link
+    combobox_index = 0 
+    for i in range (len(DownloadType.downloadTypes)):           # getting current combobox id 
+        if DownloadType.downloadTypes[i] == Combobox.get():     # interestingly there is no built-in function in tkinter 
+            break                                               # to do this for know, 
+        else: 
+            combobox_index += 1
+    userConfig.last_combobox_state = str(combobox_index)        # combobox.current(id)  id -> (String)
+    userConfig.saveConfiguration("userConfig",userConfig)
+    
+    debuglog("cbbx state: " + str(combobox_index))
+    
+    if len(link) < 5 :
+        label_download.configure(text=" ") 
+        debuglog("startDownloading(): wrong link length")
+        msg.showinfo(title="information", message="Wrong link length") 
+        textBoxDownloadLink.delete("1.0","end")
+        textBoxDownloadLink.insert("end-1c","")
+        userConfig.link = ""
+        userConfig.saveConfiguration("userConfig",userConfig)
+        return 
     
     if chosen_plan == "video 720p MAX":
         download_video_720pMAX(link,SAVE_PATH)
@@ -932,6 +1054,8 @@ def startDownloading():
     #downloading_thread.join()
     make_log(logs)
     msg.showinfo(title="information", message="Download ended")     
+
+
     
 def browse(): # TODO , not working yet 
    global SAVE_PATH
@@ -941,9 +1065,31 @@ def browse(): # TODO , not working yet
        SAVE_PATH = change_backslashes(SAVE_PATH) # for windows usage 
        textBoxPath.delete("1.0","end")
        textBoxPath.insert("end-1c",browse_path)
+       userConfig.SAVE_PATH = SAVE_PATH
+       userConfig.saveConfiguration("userConfig",userConfig)
    except:
-       log("ygui: browse(): anything hasn`t been setted")
-        
+       errorLog("Error: browse(): anything hasn`t been setted")
+       
+       
+def callbackFunc(event):        # combobox get event as string : title of combo option
+     print(event.widget.get())
+
+# combobox will always save its state when you just choose ann option
+def combobox_saveStateOnClick(event):
+   try:
+    combobox_option = event.widget.get()
+    combobox_index = 0 
+    for i in range (len(DownloadType.downloadTypes)):           # getting current combobox id 
+        if DownloadType.downloadTypes[i] == combobox_option:     # interestingly there is no built-in function in tkinter 
+            break                                               # to do this for know, 
+        else: 
+            combobox_index += 1
+    currentComboboxID = str(combobox_index)
+    debuglog("comboboxGetID(): combobox_inxex="+ currentComboboxID + "  event: "+str(combobox_option))
+    userConfig.last_combobox_state = currentComboboxID        # combobox.current(id)  id -> (String)
+    userConfig.saveConfiguration("userConfig",userConfig)
+   except: 
+       errorLog("Error: combobox_saveStateOnClick(): unexpected problem")
 # -------|
 # # Main |
 # -------|
@@ -956,6 +1102,11 @@ logs = []
 browse_path = ""
 files_links = []
 files_names = []
+currentComboboxID = 0
+
+userConfig = UserConfig()
+userConfig = userConfig.loadConfiguration("userConfig")
+
 #downloading_thread = threading.Thread(target=startDownloading)
 
 def main():
@@ -966,8 +1117,11 @@ def main():
     global textBoxDownloadLink
     global Combobox
     global label_download
+    global userConfig
     global threads
 
+    #userConfig = UserConfig()
+    #userConfig = userConfig.loadConfiguration("userConfig")
     print(time_now())
     log("start "+time_now()+"\n")
     
@@ -988,13 +1142,15 @@ def main():
     # textbox for the path ----------------------
 
     textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
-    if len(auto_fill_SAVE_PATH)>0:
-        auto_fill = auto_fill_SAVE_PATH
-        auto_fill = change_backslashes(auto_fill)
-        textBoxPath.insert("end-1c",auto_fill)
-    else:
-        last_location = read_file("last_location.txt")
-        textBoxPath.insert("end-1c",last_location)
+    last_location = userConfig.SAVE_PATH
+    textBoxPath.insert("end-1c",last_location)
+    #if len(userConfig.SAVE_PATH)>0:
+    #    auto_fill = auto_fill_SAVE_PATH
+    #    auto_fill = change_backslashes(auto_fill)
+    #    textBoxPath.insert("end-1c",auto_fill)
+    #else:
+    #    last_location = read_file("last_location.txt")
+    #    textBoxPath.insert("end-1c",last_location)
     textBoxPath.configure(background="#FFFFFF")
     textBoxPath.pack()
 
@@ -1013,8 +1169,9 @@ def main():
     # Textbox for the link ----------------------
 
     textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
-    if len(auto_fill_link_field)>0:
-        textBoxDownloadLink.insert("end-1c",auto_fill_link_field)
+    #if len(auto_fill_link_field)>0:
+    #   textBoxDownloadLink.insert("end-1c",auto_fill_link_field)
+    textBoxDownloadLink.insert("end-1c",userConfig.link)
     textBoxDownloadLink.pack()
  
     # Label with info for the <confirm the path>
@@ -1034,8 +1191,14 @@ def main():
 
     downloadType = DownloadType
     Combobox=ttk.Combobox(frame,values=downloadType.downloadTypes,width=30,state = "readonly",font=myFont)
-    Combobox.current(2) # show first option 
+    try:
+        currentComboboxID = str(userConfig.last_combobox_state)
+        Combobox.current(currentComboboxID) # show first option 
+    except:
+        log("main(): incorrect comobox current state,\" "+ userConfig.last_combobox_state +" \" problem has been fixed automaticallly") 
+        Combobox.current(0) # show first option
     frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
+    Combobox.bind("<<ComboboxSelected>>", combobox_saveStateOnClick) # event listener
     Combobox.pack()
 
     # Label with downloading info ---------------
@@ -1059,6 +1222,10 @@ def main():
                              selectcolor="blue",
                              command=lambda:checkBoxAction_makeLogs(str(var1.get())) )
     c1['font'] = myFont
+    if userConfig.allow_logs == True:
+        c1.select()
+        global make_logs
+        make_logs = True
     c1.pack()
     c2 = tkinter.Checkbutton(frame, 
                              text='add debug details to logs',
@@ -1070,6 +1237,10 @@ def main():
                              selectcolor="blue",
                              command=lambda:checkBoxAction_makeDetailedLogs(str(var2.get())))
     c2['font'] = myFont
+    if userConfig.returnDetailsInLogs() == True:
+        c2.select()
+        global append_debug_details_to_logs
+        append_debug_details_to_logs = True
     c2.pack()
     c3 = tkinter.Checkbutton(frame, 
                          text='show debug details in cmd',
@@ -1081,7 +1252,10 @@ def main():
                          selectcolor="blue",
                          command=lambda:checkBoxAction_cmdDetails(str(var3.get())))
     c3['font'] = myFont
-    #c3.select()
+    if userConfig.details_in_cmd == True:
+        c3.select()
+        global show_cmd_details
+        show_cmd_details = True
     c3.pack()
 
     frame.resizable(width=False, height=False)

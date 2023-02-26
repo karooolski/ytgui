@@ -9,7 +9,7 @@ exe
 logs
 runtest.bat
 last_location.txt
-
+cache.sqlite3
 
 #============
 # template  : 
