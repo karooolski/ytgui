@@ -10,6 +10,8 @@ logs
 runtest.bat
 last_location.txt
 cache.sqlite3
+__pycache__
+test.py
 
 #============
 # template  : 

@@ -13,8 +13,8 @@ import tkinter.font as font
 # PYTUBE API ------------------------------
 from pytube import Playlist
 from pytube import YouTube 
-from pytube.cli import on_progress #this module contains the built in progress bar. (console)
-from pytube import Channel
+#from pytube.cli import on_progress #this module contains the built in progress bar. (console)
+#from pytube import Channel
 # System -------------------------------------------------
 import os
 from datetime import datetime
@@ -22,7 +22,7 @@ import time # sleep
 import requests
 # System :: If file exists etc-------------------------------
 import os.path
-from os.path import exists
+#from os.path import exists
 # import atexit # System :: making before exit action (saving log)
 # EDIT METADATA of the file -----------------------------
 import eyed3
@@ -43,9 +43,9 @@ from moviepy.audio.io.AudioFileClip import * # close
 
 import threading
 #import multiprocessing
-
+import sys
 import urllib.request # check internet connection
-
+#from canvas import *
 from sqlitedict import SqliteDict # simple database for storing user options locally: -----------------
 
 class DownloadType:
@@ -70,22 +70,22 @@ class DownloadType:
 
 ASCI_grey = "#808080"
 dark_cyan = "#308080"
-main_collor = dark_cyan
+light_blue = "#00fdec"
+main_collor = "black"
 TEXT_collor = "white"
 TEXT_warning = "red"
 gui_font = 'Helvetica'
 gui_font_size = 15
 frame_title = "ytgui : YouTube Audio / Video Downloader"
-frame_geometry="500x510"
-
+frame_geometry="504x510"
+version = "1.0.13"
+        
 # # DEBUG : 
 #---------------
-
-make_logs = False
-show_cmd_details = False
-append_debug_details_to_logs = False
-auto_fill_SAVE_PATH = ""
-auto_fill_link_field = ""
+class Debug:
+    make_logs = False
+    show_cmd_details = False
+    append_debug_details_to_logs = False
 
 class bcolors:
     HEADER = '\033[95m'
@@ -141,14 +141,58 @@ class UserConfig():
     def returnDetailsInLogs(self):
         return self.details_in_loggs
 
+# two methods from pytube.cli: TODO merge with tkinter GUI progressbar 
+import shutil
+def display_progress_bar(
+    bytes_received: int, filesize: int, ch: str = "█", scale: float = 0.55
+) -> None:
+    """Display a simple, pretty progress bar.
+
+    Example:
+    ~~~~~~~~
+    PSY - GANGNAM STYLE(강남스타일) MV.mp4
+    ↳ |███████████████████████████████████████| 100.0%
+
+    :param int bytes_received:
+        The delta between the total file size (bytes) and bytes already
+        written to disk.
+    :param int filesize:
+        File size of the media stream in bytes.
+    :param str ch:
+        Character to use for presenting progress segment.
+    :param float scale:
+        Scale multiplier to reduce progress bar size.
+
+    """
+    columns = shutil.get_terminal_size().columns
+    max_width = int(columns * scale)
+
+    filled = int(round(max_width * bytes_received / float(filesize)))
+    remaining = max_width - filled
+    progress_bar = ch * filled + " " * remaining
+    percent = round(100.0 * bytes_received / float(filesize), 1)
+    text = f" ↳ |{progress_bar}| {percent}%\r"
+    sys.stdout.write(text)
+    sys.stdout.flush()
+
+from pytube import Stream
+from pytube.cli import display_progress_bar
+@staticmethod
+def on_progress(
+    stream: Stream, chunk: bytes, bytes_remaining: int
+) -> None:  # pylint: disable=W0613
+    filesize = stream.filesize
+    #print("stream.filesize = "+str(filesize))
+    bytes_received = filesize - bytes_remaining
+    display_progress_bar(bytes_received, filesize)
+       
 
 # # Download Functions : Audios 
 # -----------------------------
 
 def download_mp3_audio_with_thumbnail(link : str,SAVE_PATH : str):
-    log("download_mp3_audio_with_thumbnail()") 
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"single_video") == False):
+    log("download_mp3_audio_with_thumbnail()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"single_video") == False):
         return 
     
     yt = YouTube(link,on_progress_callback=on_progress)
@@ -161,29 +205,26 @@ def download_mp3_audio_with_thumbnail(link : str,SAVE_PATH : str):
             msg.showinfo(title="information", message="File is already exists in current path")
             return 
          
-        audio = download_audio(yt,"mp3", SAVE_PATH)
+        audio = download_audio(yt, SAVE_PATH)
         file_path = ""
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
         except: 
-            log("Error: download_mp3_audio_with_thumbnail():couldn`t convert mp4 to mp3")
+            errorLog("Error: download_mp3_audio_with_thumbnail():couldn`t convert mp4 to mp3")
         set_meta_data(yt, SAVE_PATH, file_path , link, "single_video" , "None" )
         
         try:
             files_links.append(link) # can be helpful if there are duplicates in playlist
             files_names.append(yt.title+".mp3")
         except:
-            log("Erorr: download_mp3_audio_with_thumbnail(): cant append downloaded data do list ") 
-        
-        
+            log("Erorr: download_mp3_audio_with_thumbnail(): cant append downloaded data do list ")   
     except:
-        log("download_mp3_audio_with_thumbnail: whole function send error message!")    
+        errorLog("download_mp3_audio_with_thumbnail: whole function send error message!")    
 
 def download_mp4_audio(link,SAVE_PATH):
-    log("download_mp4_audio()")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"single_video") == False):
+    log("download_mp4_audio()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"single_video") == False):
         return 
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
@@ -201,20 +242,21 @@ def downloadAudioToBeMerged(link,SAVE_PATH):   #download audio onldy
         #yt.streams.filter(abr="160kbps", progressive=False).first().download(SAVE_PATH,filename="audiocbd")
         yt.streams.get_audio_only("mp4").download(SAVE_PATH,filename="audiomerge.mp4")
         title = yt.title
+        return True
     except: 
         errorLog("Error: downloadAudioToBeMerged(): Download audio failed")
+        return False
 
 def download_mp3_audio(link,SAVE_PATH):
-    log("download_mp3_audio")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"single_video") == False):
+    log("download_mp3_audio()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"single_video") == False):
         return 
     yt = YouTube(link,on_progress_callback=on_progress)
     if yt == False:
         return
     print_info_downloading_single_file(yt.title,link)
     try:
-        audio = download_audio(yt,"mp3", SAVE_PATH)
+        audio = download_audio(yt, SAVE_PATH)
         try:
             file_path = os.path.join(SAVE_PATH, audio.default_filename)
             file_path = convert_to_mp3_with_metadata(file_path)
@@ -229,36 +271,53 @@ def download_mp3_audio(link,SAVE_PATH):
 
 # Usage: download video in 1080p and merge with audio
 def downloadVideo_1080p_toBeMerged(link,SAVE_PATH):   #download video only
-    log("downloadVideo_1080p_toBeMerged")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
+    log("downloadVideo_1080p_toBeMerged\nDownloading started "+time_now()+"\n---------------------------------------")
     try:  
         yt = YouTube(link,on_progress_callback=on_progress)
         if yt == False: 
             return 
-        print_info_downloading_single_file(yt.title,link)
+        try: 
+            print_info_downloading_single_file(yt.title,link)
+        except: pass
         yt.streams.filter(res="1080p", progressive=False).first().download(SAVE_PATH,filename="videomerge.mp4")
+        return True
     except:
-        errorLog("Error: downloadVideo_1080p_toBeMerged(): Download video failed")    
+        errorLog("Error: downloadVideo_1080p_toBeMerged(): Download video failed")
+        return False    
 
-# usage: downloading mp3
-# inner function for other functions
-def download_audio(yt: YouTube, file_type: str, downloads_path: str):
+# usage: downloading mp3 , # inner function for other functions
+def download_audio(_yt_: YouTube, save_path: str):
+    print("download_audio: save path = " + save_path)
+    debuglog("yt: " + str(_yt_))
     try:
-        #print_info_downloading_single_file(yt.title)
-    # Download a video and debug progress
-        if file_type == "mp4":
-            audio = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
-        else:
-            audio = yt.streams.filter(only_audio=True).get_audio_only() # it is mp4 too
-        audio.download(downloads_path)
-        return audio # returning audiofile (mp4) to be converted to mp3 
+        #print_info_downloading_single_file(_yt_.title) # errors
+        #audio = _yt_.streams.filter(only_audio=True).get_audio_only() # it is mp4 too # downloads audio slowly, meta_data: editable
+        
+        try:
+            _audio_ = _yt_.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
+            _audio_.download(save_path)
+            print("output audio : "+str ( _audio_ ))
+        except:                                                                 # except occures during testing by using outer file
+            if(is_internet_connection):
+                errorLog("download_audio(): problem occured, retry download")
+                download_audio(_yt_,save_path)
+        
+        #audio = _yt_.streams.filter(subtype="mp4", progressive=True).order_by("abr").last()
+            # those 2 above are better becaouse 
+            # + progressbar collback works during downloading : 
+            # + download is way faster
+            # + file is lighter (~(-1KB))
+            # info: downlaods video+audio in .mp4 fotmat, meta_data: editable, convertable to .mp3
+        
+        #audio.download(save_path)
+        debuglog("download_audio(): end")
+        return _audio_ # returning audiofile (mp4) to be converted to mp3 
     except: 
         errorLog("Error: download_audio(): download video (function) error!")
 
 def download_video_720pMAX(link,SAVE_PATH):
-    log("download_video_720pMAX()")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"single_video") == False):
+    log("download_video_720pMAX()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"single_video") == False):
         return 
     try: 
         yt = YouTube(link,on_progress_callback=on_progress)
@@ -268,9 +327,8 @@ def download_video_720pMAX(link,SAVE_PATH):
         errorLog("Error: download_video_720pMAX(): \n Did you set the PATH correctly? , PATH: "+SAVE_PATH)
 
 def download_video_LQ(link,SAVE_PATH):
-    log("download_video_LQ")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"single_video") == False):
+    log("download_video_LQ\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"single_video") == False):
         return 
     try:
         yt = YouTube(link,on_progress_callback=on_progress)
@@ -278,7 +336,7 @@ def download_video_LQ(link,SAVE_PATH):
         stream = yt.streams.first()
         stream.download(SAVE_PATH)
     except:
-        log("download_video_LQ: error!")
+        errorLog("download_video_LQ: error!")
 
 def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
     try:
@@ -286,17 +344,22 @@ def downloadVideoWithRezolution(SAVE_PATH,link,rezolution):
         print_info_downloading_single_file(yt.title,link)
         yt.streams.filter(res=rezolution, progressive=False).first().download(SAVE_PATH)
     except: 
-        log("Download video in "+str(rezolution)+"p failed")
-
+        errorLog("Download video in "+str(rezolution)+"p failed")
 
 # # Download Functions : Playlists : Videos
 # -----------------------------------------
 
 def download_video_playlist_720pMAX(link,SAVE_PATH):
-    log("download_video_playlist_720pMAX()")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"playlist") == False ):
+    log("download_video_playlist_720pMAX()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"playlist") == False ):
         return
+    #total = 0
+    #try:
+    #    playlist = Playlist(link)
+    #    for video in playlist.videos:
+    #        total += 1
+    #except:
+    #    errorLog("download_video_playlist_720pMAX: ")
     try:
         playlist = Playlist(link)
         count_ = 1
@@ -310,14 +373,13 @@ def download_video_playlist_720pMAX(link,SAVE_PATH):
                 yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution')[-1].download(SAVE_PATH)
                 count_ += 1
             except:
-                log("download_video_playlist_720pMAX: fail during downloading, does video has age restictions?")
+                errorLog("download_video_playlist_720pMAX: fail during downloading, does video has age restictions?")
     except:
-        log("download_video_playlist_720pMAX: error!")  
+        errorLog("download_video_playlist_720pMAX: error!")  
 
 def download_video_playlist_LQ(link,SAVE_PATH):
-    log("download_video_playlist_LQ()")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
-    if ( playlistOrNot(link,"playlist") == False ):
+    log("download_video_playlist_LQ()\nDownloading started "+time_now()+"\n---------------------------------------")
+    if ( validLink(link,"playlist") == False ):
         return
     try:
         playlist = Playlist(link)
@@ -333,33 +395,52 @@ def download_video_playlist_LQ(link,SAVE_PATH):
                 stream.download(SAVE_PATH)
                 count_ += 1
             except:
-                log("download_video_playlist_720pMAX: fail during downloading")
+                errorLog("download_video_playlist_720pMAX: fail during downloading")
     except:
-        log("download_video_playlist_720pMAX: error!")  
+        errorLog("download_video_playlist_720pMAX: error!")  
 
 # # Download Functions : Playlists : Audios
 #------------------------------------------
 
 def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
+    #global link ; global SAVE_PATH
+    #link = link ; SAVE_PATH = SAVE_PATH
     log("download_mp3_audio_playlist_with_thumbnails()")
     log("Downloading started "+time_now()+"\n---------------------------------------")
     problem_occured_during_downloading = False
     file_exists_flag = False
-    try:
-        if ( playlistOrNot(link,"playlist") == False ):
+    
+    if ( validLink(link,"playlist") == False ):
+            errorLog("download_mp3_audio_playlist_with_thumbnails : unvalid link")
             return
+    
+    debuglog("download_mp3_audio_playlist_with_thumbnails(): \n SAVE_PATH = "+SAVE_PATH+"\n link = "+link)
+    debuglog("collecting number of videos to download ...")
+    
+    # get exact value of videos in playlist, because playlist.length also counts unvailable videos
+    total = 0
+    try:
+        playlist = Playlist(link)
+        total = str(len(playlist.videos))
+        total_ppl = str(playlist.length)
+        debuglog("counted total: "+ str(total) + ", playlist length with unvailable videos: " + str(total_ppl) )
+    except:
+        errorLog("Error : couldnt get max count ")
+    debuglog("collecting download data ended, starting connecting to the playlist")
+    
+    
+    # downloading 
+    try:
         playlist = Playlist(link)
         count_ = 1
-        total = str(playlist.length)
         try:
             for video in playlist.videos:
                 temp_link = video.watch_url
                 yt = YouTube(temp_link,on_progress_callback=on_progress)    
                 file_path = ""
                 title = "title"
-                # interestingly, assigning a video title to a <string> variable can cause problems (eirher yt.title and video.title)
-                try:
-                    title = str(yt.title)    # no errors found if it is like that
+                # interestingly, assigning a video title to a <string> variable can cause problems (either yt.title and video.title)
+                try: title = str(yt.title)    # no errors found if it is like that
                 except :
                     try:
                         title = str(video.title)
@@ -368,7 +449,7 @@ def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
                 try:
                     #vid_title = video.title  
                     #print_info_downloading_playlist(str(count_),total,vid_title,temp_link)
-                    inf =  (time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+title+" "+temp_link)
+                    inf =  str(time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+title+" "+temp_link)
                     log(inf)
                 except: 
                     log("Error: download_mp3_audio_playlist_with_thumbnails(): print info error ")
@@ -376,6 +457,7 @@ def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
                     debuglog("to fileExsists commes:"+" "+SAVE_PATH+" "+title+" "+temp_link)
                     file_exists_flag = False
                     file_exists_flag = fileExsists(SAVE_PATH,title,temp_link)
+                    debuglog("---fileExsists(): end() ")
                 except: 
                     log(bcolors.WARNING+"Error: "+bcolors.ENDC+"download_mp3_audio_playlist_with_thumbnails: file Exists flag error")
                     log("I'm downloading just in case")
@@ -384,7 +466,9 @@ def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
                     count_+=1
                 else:    #download: 
                     try:
-                        audio = download_audio(yt,"mp3", SAVE_PATH)
+                        debuglog("--- start downloading")
+                        debuglog("yt: " + str(yt))
+                        audio = download_audio(yt, SAVE_PATH)
                         file_path = os.path.join(SAVE_PATH,audio.default_filename) # 
                         file_path = convert_to_mp3_with_metadata(file_path)
                         set_meta_data(yt, SAVE_PATH, file_path , temp_link, "playlist" , playlist.title )
@@ -393,33 +477,32 @@ def download_mp3_audio_playlist_with_thumbnails(link : str,SAVE_PATH : str):
                             files_links.append(temp_link) # can be helpful if there are duplicates in playlist
                             files_names.append(video.title+".mp3")
                         except:
-                            log("Erorr: download_mp3_audio_playlist_with_thumbnails: cant append downloaded data do list ") 
+                            errorLog("Erorr: download_mp3_audio_playlist_with_thumbnails(): cant append downloaded data do list ") 
                     except:
-                        log("Error: download_mp3_audio_playlist_with_thumbnails: some problem occured during dowloading!")
+                        errorLog("Error: download_mp3_audio_playlist_with_thumbnails(): some problem occured during dowloading!")
                         problem_occured_during_downloading = True
         except:
-            log("Erorr: download_mp3_audio_playlist_with_thumbnails(): main loop error")
+            errorLog("Erorr: download_mp3_audio_playlist_with_thumbnails(): main loop error")
            # print("wysylam temp_link do fileExists" + temp_link) 
             
                 # fixed: finding duplicate not always works beacause during converting some chars can by cutted of like : // , / , |
            
     except:
-        log("erorr during downloading playlist <-- download_mp3_audio_playlist_with_thumbnails() : ")
+        errorLog("download_mp3_audio_playlist_with_thumbnails(): erorr during downloading playlist")
         
     if (problem_occured_during_downloading):
         log("sleep before next download")
         time.sleep(20) # sleep 10 s
-        if(check_internet_connection()):
+        if(is_internet_connection()):
             thread_download() # download again
     
     #print("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")     
 
 
 def download_mp3_audio_playlist(link,SAVE_PATH):
-    log("download_mp3_audio_playlist")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
+    log("download_mp3_audio_playlist()\nDownloading started "+time_now()+"\n---------------------------------------")
     try:
-        if ( playlistOrNot(link,"playlist") == False ):
+        if ( validLink(link,"playlist") == False ):
             return
         playlist = Playlist(link)
         count_ = 1
@@ -429,22 +512,21 @@ def download_mp3_audio_playlist(link,SAVE_PATH):
             yt = YouTube(temp_link,on_progress_callback=on_progress)
             try:
                 print_info_downloading_playlist(str(count_),total,video.title,temp_link)
-                audio = download_audio(yt,"mp3", SAVE_PATH)
+                audio = download_audio(yt, SAVE_PATH)
                 file_path = os.path.join(SAVE_PATH, audio.default_filename)
                 file_path = convert_to_mp3_with_metadata(file_path)
                 count_ += 1
             except:
-                log("download_mp3_audio_playlist_f(): some problem occured during dowloading!")
+                errorLog("download_mp3_audio_playlist_f(): some problem occured during dowloading!")
     except:
-        log("Erorr during downloading palylist")
-        log("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")  
+        errorLog("Erorr during downloading palylist")
+        errorLog("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")  
 
 
 def download_mp4_audio_playlist(link,SAVE_PATH):
-    log("download_mp4_audio_playlist")
-    log("Downloading started "+time_now()+"\n---------------------------------------")
+    log("download_mp4_audio_playlist()\nDownloading started "+time_now()+"\n---------------------------------------")
     try:
-        if ( playlistOrNot(link,"playlist") == False ):
+        if ( validLink(link,"playlist") == False ):
             return
         playlist = Playlist(link)
         count_ = 1
@@ -459,10 +541,10 @@ def download_mp4_audio_playlist(link,SAVE_PATH):
                 except: log("download_mp4_audio_playlist: Stream download error")
                 count_ += 1
             except:
-                log("some problem occured during dowloading!")
+                errorLog("some problem occured during dowloading!")
     except:
-        log("Erorr during downloading palylist")
-        log("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
+        errorLog("Erorr during downloading palylist")
+        errorLog("Check if: \n 1) playlist is NOT private \n 2) your link contains \'list\' ")
 
 # for now (2023 02 22), pytube doesnt support channels staritng with with @ patterns 
 # def download_chanel_720pMAX(link,SAVE_PATH):
@@ -515,11 +597,11 @@ def convert_to_mp3_with_metadata(file_path: str) -> str:
                 try:
                     os.remove(file_path.replace("mp3", "mp4")) # remove mp4 file
                     return file_path
-                except: log("couldnt remove mp4 temporary file")
-            except: log("couldnt write and close audiofile")
-        except: log("couldnt make AdioFileClip")
+                except: errorLog("couldnt remove mp4 temporary file")
+            except: errorLog("couldnt write and close audiofile")
+        except: errorLog("couldnt make AdioFileClip")
     except:
-        log("convert_to_mp3_with_metadata function error!")
+        errorLog("convert_to_mp3_with_metadata function error!")
 
 
 # setting metadata for mp3 file: information , albulm image
@@ -538,12 +620,14 @@ def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, m
         tag.title = yt.title
         tag.artist = yt.author
         tag.artist_url = link
+        #tag.audio_source_url  cant be seen in windows10 property, but inside file : yes
+        tag._setEncodedBy("ytgui_v"+version)
         if mode == "playlist":
             tag.album = playlist_title
         try:
             tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH,'thumbnail.jpg'),'rb').read(), 'image/jpeg')
         except:
-            log("couldnt make an image by using tag")
+            errorLog("couldnt make an image by using tag")
         tag.save(version=eyed3.id3.ID3_V2_3) # important if u want to see effect also in windwos media player
         remove_file(SAVE_PATH,"thumbnail.jpg")             
     except:
@@ -553,7 +637,7 @@ def set_meta_data(yt : YouTube , SAVE_PATH : str, file_path : str ,link : str, m
 # # inside functions 
 # -------------------
 
-def check_internet_connection(host='http://google.com'):
+def is_internet_connection(host='http://google.com'):
     try:
         urllib.request.urlopen(host) #Python 3.x
         return True
@@ -592,6 +676,7 @@ def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
     name_exists = False
     link_exists = False
     try:
+        debuglog("comparing files links with existing link")
         # compare URL`s` from .mp3 files metadata from SAVE_PATH to video link that can be downloaded  
         for i in range (len(files_links)):
             if files_links[i] == link_to_video:
@@ -599,6 +684,7 @@ def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
                 link_exists = True
                 break
         
+        debuglog("comparing filenames")
         # checking if in SAVE_PATH exists file with the same filename as yt_title    
         file_name = " "
         for i in range (len(files_names)):
@@ -620,6 +706,7 @@ def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
         # next attempt: 
         # there can can be a video with the same title but other content -> changing tittle to <title><date>:  
         elif name_exists and not link_exists and not file_name.__contains__(".mp4"):                       
+            debuglog("maybe there is audio with the same title but with an other content ...")
             try:
                 type = " "
                 debuglog("filename: "+str(file_name))
@@ -634,14 +721,14 @@ def fileExsists( SAVE_PATH : str, yt_title : str, link_to_video : str):
                 log("------File NOT Exists but the same name existed earlier------")
                 return False                                         # and download file with the same name as one changed above
             except: 
-                log("error: fileExsists(): cant rename a file")
+                errorLog("error: fileExsists(): cant rename a file")
                 return True # dont download, becaouse it would overwrite file with the other file
         else:
-            log("------File NOT Exists------(Not supported case)")
+            debuglog("------File NOT Exists------(Not supported case)")
             return True     # case as above 
         
-    except: log("cant find anything in arrays or even print them")
-    log("------File NOT Exists rare case------")
+    except: errorLog("cant find anything in arrays or even print them")
+    errorLog("------File NOT Exists rare case------")
     return False
 
 # this program also need '/' slashes in the path like in linux instead "\"
@@ -712,8 +799,8 @@ def hiddenlog(infos : str):
 
 # for additional log infos 
 def debuglog(infos : str):
-    append = append_debug_details_to_logs
-    show = show_cmd_details
+    append = Debug.append_debug_details_to_logs
+    show = Debug.show_cmd_details
     if(append and show):
         log(infos)
     elif(append and not show):
@@ -724,12 +811,12 @@ def debuglog(infos : str):
 # (debug) print additional information in cmd
 # for masive infos  
 def detail(*infos):
-    if show_cmd_details == True:
+    if Debug.show_cmd_details == True:
         for info in infos:
             print(info)
     
 def make_log(logs:list):
-    if make_logs == False:
+    if Debug.make_logs == False:
         return 
     try:
         logfilename= log_filename()
@@ -749,54 +836,58 @@ def exit_handler(): # TODO it should had been here for saving log file but haven
 # old method of saving SAVE_PATH    
 # usage: remember last save location (SAVE_PATH)
 # update or create file with new content (old content erased)
-def updateFile(filename : str, content : str):
-    try:
-        file = open(filename,"w")
-        file.write(content)
-        file.close()
-    except:
-        errorLog("Erorr: updateFile()")
+#def updateFile(filename : str, content : str):
+#    try:
+#        file = open(filename,"w")
+#        file.write(content)
+#        file.close()
+#    except:
+#        errorLog("Erorr: updateFile()")
 
 # usage: remember last save location (SAVE_PATH)    
-def read_file(filename : str):
-    try:
-        file = open(filename, 'r')
-        content = file.read()
-        file.close()
-        return content
-    except FileNotFoundError:
-        updateFile(filename,"set path here")
-        return "set path here"
+#def read_file(filename : str):
+#    try:
+#        file = open(filename, 'r')
+#        content = file.read()
+#        file.close()
+#        return content
+#    except FileNotFoundError:
+#        updateFile(filename,"set path here")
+#        return "set path here"
 
 def print_info_downloading_single_file(video_title : str, video_link : str):
-        info = time_now()+" downloading "+video_title+" "+video_link
-        log(info)
+        try:
+            info = time_now()+" downloading "+video_title+" "+video_link
+            log(info)
+        except:
+            errorLog("print_info_downloading_single_file(): couldn`t make log")
         
 def print_info_downloading_playlist(count_: str, total: str , video_title : str , video_link : str):
     info = "time_info"
     try:
         info = time_now()+" downloading ("+str(count_)+"/"+str(total)+") "+video_title+" "+video_link
+        #label_download.configure(text="downloading "+ str(count_) +" from " + str(total))
     except: print("error: print_info_downloading_playlist(): making info error")
     try:
         log(info)
     except: print ("error: print_info_downloading_playlist(): making log error") 
 
-def playlistOrNot(linkk,confirm):
+def validLink(link_,confirm):
+    print("provided link: "+link_)
     try:
         debuglog("checking playlist or single video and others: ")
-        print(link)
-        if link.__contains__('https://www.youtube.com/watch?v=') and link.__contains__('&list=') and confirm == "single_video":
+        if link_.__contains__('https://www.youtube.com/watch?v=') and link_.__contains__('&list=') and confirm == "single_video":
             debuglog("single_video confirmed inside playlist")
             return True
-        if link.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
+        if link_.__contains__('https://www.youtube.com/playlist?list=') and confirm == "playlist":
             print("playlist confirmed")
             print("--------------------------------")
             return True
-        if not (linkk.__contains__('https://www.youtube.com/playlist?list=')) and link.__contains__("https://www.youtube.com/watch?v=") and confirm == "single_video":
+        if not (link_.__contains__('https://www.youtube.com/playlist?list=')) and link_.__contains__("https://www.youtube.com/watch?v=") and confirm == "single_video":
             print("single video confirmed")
             print("--------------------------------")
             return True
-        if link.__contains__('https://www.youtube.com/shorts/') and confirm == "single_video":
+        if link_.__contains__('https://www.youtube.com/shorts/') and confirm == "single_video":
             debuglog("downloading short")
             return True
         else:
@@ -804,13 +895,34 @@ def playlistOrNot(linkk,confirm):
             print("UserErorr: Propably you have entered some wrong input, check link and the path")
             return False # https://www.youtube.com/watch?v=uXKdU_Nm-Kk
     except: 
-        errorLog("Error: playlistOrNot(): some problem occured")
+        errorLog("Error: validLink(): some problem occured")
+
+def validSavePath(SAVE_PATH : str):
+    
+    isNotEmpty = False
+    isNotSpace = False
+    isNotHttps = False
+    windows_proper = False
+    linux_proper = False
+    
+    if (not SAVE_PATH == "") : isNotEmpty = True
+    if (not SAVE_PATH == " "): isNotSpace = True
+    if (not SAVE_PATH.__contains__("https:")) : isNotHttps = True
+    if (len(SAVE_PATH) >= 3 and SAVE_PATH.__contains__(":/")) :  windows_proper = True
+    if (len(SAVE_PATH) >= 1 and SAVE_PATH.__contains__("/")) : linux_proper = True
+    
+    if(isNotEmpty and isNotSpace and isNotHttps and windows_proper or linux_proper):
+        debuglog("validSavePath: SAVE_PATH is valid")
+        enableDownloadButton()
+    else :
+        disableDownloadButton()
+       
+
+
 # sometimes you want to download a video during watching playlist
 # the link contains watch and list in the same but for 
 #def singleVideoFromPlaylist():
     
-
-
 def remove_unnecesary_chars(text : str):
     text = stringReplace(text,".","")
     text = stringReplace(text,",","")
@@ -891,8 +1003,8 @@ def This_Two_Are_The_Same(dir_i_ : str , yt_title_):
     
     return False
 
-# # Button Fucntions (Tkinter)
-# ----------------------------
+# # Button Fucntions (Tkinter)  +  Event Actions 
+# -----------------------------------------------
 
 def disableDownloadButton():
     ButtonDownload["state"] = "disabled"
@@ -901,81 +1013,103 @@ def enableDownloadButton():
     if ButtonDownload["state"] == "disabled":
         ButtonDownload["state"] = "normal" #other options: active
 
-def buttonActionConfirmThePath():
+def eventAction_confirmThePath(self):
     try: 
         global SAVE_PATH
         SAVE_PATH = textBoxPath.get(1.0, "end-1c")
         #updateFile("last_location.txt",SAVE_PATH)
         SAVE_PATH = change_backslashes(SAVE_PATH)
-        labelPath.config(text = "Provided Input: "+SAVE_PATH)
+        #labelPath.config(text = "Provided Input: "+SAVE_PATH)
+        debuglog("eventAction_confirmThePath: len(SAVE_PATH)=" + str(len(SAVE_PATH)) + " SAVE_PATH = "+SAVE_PATH)
+        validSavePath(SAVE_PATH)
         userConfig.SAVE_PATH = SAVE_PATH
-        debuglog("debug: buttonActionConfirmThePath: len(SAVE_PATH)=" + str(len(SAVE_PATH)))
-        if(len(SAVE_PATH)==0):
-            userConfig.SAVE_PATH = ""
-            msg.showinfo(title="information", message="Nothing has been typed!")
-            userConfig.saveConfiguration("userConfig",userConfig)
-            disableDownloadButton()
-            return  
         userConfig.saveConfiguration("userConfig",userConfig)
-        enableDownloadButton()
     except: 
-        errorLog("Error: buttonActionConfirmThePath()")
+        errorLog("Error: eventAction_confirmThePath()")
+
+# combobox will always save its state when you just choose ann option
+def event_combobox_saveStateOnClick(event):
+   try:
+    combobox_option = event.widget.get()
+    combobox_index = 0 
+    for i in range (len(DownloadType.downloadTypes)):           # getting current combobox id 
+        if DownloadType.downloadTypes[i] == combobox_option:    # interestingly there is no built-in function in tkinter 
+            break                                               # to do this for know, 
+        else: 
+            combobox_index += 1
+    currentComboboxID = str(combobox_index)                     # combobox is setted by sgtring id xd
+    debuglog("comboboxGetID(): combobox_inxex="+ currentComboboxID + "  event: "+str(combobox_option))
+    userConfig.last_combobox_state = currentComboboxID        # combobox.current(id)  id -> (String)
+    userConfig.saveConfiguration("userConfig",userConfig)
+   except: 
+       errorLog("Error: event_combobox_saveStateOnClick(): unexpected problem")
     
 def checkBoxAction_makeLogs( var ):
-    global make_logs
+    #global Debug.make_logs
     if int(var) == 1:
-        make_logs = True
-        debuglog("checkBoxAction_makeLogs() ->  make_logs = true")
+        Debug.make_logs = True
+        debuglog("checkBoxAction_makeLogs() ->  Debug.make_logs = true")
         userConfig.allow_logs = True
         userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
-        make_logs = False
-        debuglog("checkBoxAction_makeLogs() -> make_logs = false")
+        Debug.make_logs = False
+        debuglog("checkBoxAction_makeLogs() -> Debug.make_logs = false")
         userConfig.allow_logs = False
         userConfig.saveConfiguration("userConfig",userConfig)
 
 def checkBoxAction_makeDetailedLogs( var ):
-    global append_debug_details_to_logs  
+    #global Debug.append_debug_details_to_logs  
     global userConfig
     if int(var) == 1:
-        append_debug_details_to_logs = True
-        debuglog("checkBoxAction_makeDetailedLogs() ->  append_debug_details_to_logs = true")
+        Debug.append_debug_details_to_logs = True
+        debuglog("checkBoxAction_makeDetailedLogs() ->  Debug.append_debug_details_to_logs = true")
         userConfig.details_in_loggs = True
         userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
-        append_debug_details_to_logs = False
-        debuglog("checkBoxAction_makeDetailedLogs() -> append_debug_details_to_logs = false")
+        Debug.append_debug_details_to_logs = False
+        debuglog("checkBoxAction_makeDetailedLogs() -> Debug.append_debug_details_to_logs = false")
         userConfig.details_in_loggs = False
         userConfig.saveConfiguration("userConfig",userConfig)
         
 def checkBoxAction_cmdDetails (var):
-    global show_cmd_details  
+    #global Debug.show_cmd_details  
     global userConfig
     if int(var) == 1:
-        show_cmd_details = True
-        debuglog("checkBoxAction_cmdDetails() ->  show_cmd_details = true")
+        Debug.show_cmd_details = True
+        debuglog("checkBoxAction_cmdDetails() ->  Debug.show_cmd_details = true")
         userConfig.details_in_cmd = True
         userConfig.saveConfiguration("userConfig",userConfig)
     elif int(var) == 0:
-        show_cmd_details = False
-        debuglog("checkBoxAction_cmdDetails() -> show_cmd_details = false")
+        Debug.show_cmd_details = False
+        debuglog("checkBoxAction_cmdDetails() -> Debug.show_cmd_details = false")
         userConfig.details_in_cmd = False
         userConfig.saveConfiguration("userConfig",userConfig)
 
 # prevent tkinter winodw from being freezed during downloading 
 # or run multiple downloads at once (mess in logs)
 def thread_download():
+    global label_download
+    if (not is_internet_connection()):
+        msg.showinfo(title="information", message="No internet connection detected!")
+        return 
     try:
         files_links.clear()
         files_names.clear()
         fulfill_lists()
-        label_download.configure(text="Downloading in progress")
+        try:
+            label_download.configure(text="Downloading in progress")
+        except:
+            pass
+        print("********************")
         new_thread = threading.Thread(target=startDownloading).start()
     except: 
         errorLog("Error: thread_download(): some problem occured")
+
 def startDownloading():
-    global link 
+    debuglog("startDownloading(): start! ")
+    global link
     global SAVE_PATH
+    global label_download
     
     link = textBoxDownloadLink.get(1.0, "end-1c")
     #label_download.config(text = "Provided Input: "+link)  
@@ -998,6 +1132,7 @@ def startDownloading():
     debuglog("cbbx state: " + str(combobox_index))
     
     if len(link) < 5 :
+        
         label_download.configure(text=" ") 
         debuglog("startDownloading(): wrong link length")
         msg.showinfo(title="information", message="Wrong link length") 
@@ -1032,9 +1167,9 @@ def startDownloading():
         download_video_playlist_720pMAX(link,SAVE_PATH)
         
     if chosen_plan == "video 1080p and merge with audio":
-        downloadVideo_1080p_toBeMerged(link,SAVE_PATH)
-        downloadAudioToBeMerged(link,SAVE_PATH)
-        merge_video_with_audio()
+        if (downloadVideo_1080p_toBeMerged(link,SAVE_PATH)):
+            if(downloadAudioToBeMerged(link,SAVE_PATH)):
+                merge_video_with_audio()
        
     if chosen_plan == "video in 1080p with no Voice":
         downloadVideoWithRezolution(SAVE_PATH,link,"1080p") # other: 1440p , 2160p
@@ -1049,7 +1184,7 @@ def startDownloading():
    #     download_chanel_720pMAX(link,SAVE_PATH)
     
     
-    label_download.configure(text=" ") 
+    #label_download.configure(text=" ") 
     log("Downloading endend "+time_now()+"\n---------------------------------------")
     #downloading_thread.join()
     make_log(logs)
@@ -1057,7 +1192,7 @@ def startDownloading():
 
 
     
-def browse(): # TODO , not working yet 
+def browse(): 
    global SAVE_PATH
    try: 
        browse_path = filedialog.askdirectory(initialdir="YOUR DIRECTORY PATH", title="Save Video")
@@ -1067,29 +1202,16 @@ def browse(): # TODO , not working yet
        textBoxPath.insert("end-1c",browse_path)
        userConfig.SAVE_PATH = SAVE_PATH
        userConfig.saveConfiguration("userConfig",userConfig)
+       validSavePath(SAVE_PATH)
    except:
        errorLog("Error: browse(): anything hasn`t been setted")
-       
+
+
        
 def callbackFunc(event):        # combobox get event as string : title of combo option
      print(event.widget.get())
 
-# combobox will always save its state when you just choose ann option
-def combobox_saveStateOnClick(event):
-   try:
-    combobox_option = event.widget.get()
-    combobox_index = 0 
-    for i in range (len(DownloadType.downloadTypes)):           # getting current combobox id 
-        if DownloadType.downloadTypes[i] == combobox_option:     # interestingly there is no built-in function in tkinter 
-            break                                               # to do this for know, 
-        else: 
-            combobox_index += 1
-    currentComboboxID = str(combobox_index)
-    debuglog("comboboxGetID(): combobox_inxex="+ currentComboboxID + "  event: "+str(combobox_option))
-    userConfig.last_combobox_state = currentComboboxID        # combobox.current(id)  id -> (String)
-    userConfig.saveConfiguration("userConfig",userConfig)
-   except: 
-       errorLog("Error: combobox_saveStateOnClick(): unexpected problem")
+
 # -------|
 # # Main |
 # -------|
@@ -1103,10 +1225,10 @@ browse_path = ""
 files_links = []
 files_names = []
 currentComboboxID = 0
-
 userConfig = UserConfig()
 userConfig = userConfig.loadConfiguration("userConfig")
-
+global label_download
+#label_download = tkinter.Label()
 #downloading_thread = threading.Thread(target=startDownloading)
 
 def main():
@@ -1116,10 +1238,13 @@ def main():
     global labelPath
     global textBoxDownloadLink
     global Combobox
-    global label_download
     global userConfig
+    global SAVE_PATH
     global threads
-
+    global label_download
+    x_pos = 100
+    y_pos = 20
+    main_collor_ = main_collor
     #userConfig = UserConfig()
     #userConfig = userConfig.loadConfiguration("userConfig")
     print(time_now())
@@ -1128,85 +1253,114 @@ def main():
     # Top level window -------------------------
 
     frame = tkinter.Tk()
-    frame.title(frame_title)
+    frame.title(frame_title + " " + version)
     frame.geometry(frame_geometry)
-    frame.configure(background=main_collor)
-    myFont = font.Font(family=gui_font, size=gui_font_size)
-
-    # Browse Button -----------------------------
-
-    browseBtn = tkinter.Button(frame,text = "Browse", command = browse)
-    browseBtn['font'] = myFont
-    browseBtn.pack()
+    frame.resizable(width=False, height=False)
     
-    # textbox for the path ----------------------
+    myFont = font.Font(family=gui_font, size=gui_font_size)
+    
+    ## Background image 
+    
+    try:
+        img = tkinter.PhotoImage(file="background.png")
+        img_label = tkinter.Label(frame,image=img)
+        frame.attributes('-alpha',0.8)                              # frame transparency 
+        #frame.wm_attributes('-transparentcolor',main_collor)       # even whole frame can be transparent 
+        img_label.place(x=0, y=0)
+    except:
+        errorLog("main(): couldnt`t load background image")
+        main_collor_ = dark_cyan
+        frame.configure(background=main_collor_)
+    
+    ## background image secod idea
+    
+    #frame.wm_attributes("-transparentcolor", 'grey')
+    #canv = tkinter.Canvas(frame, width= 1000, height= 1000)
+    #canv.create_image(252,253,image=img)  #x,y expands the image size, if range is too big than image is starting moving x:-> / y:down
+    #canv.place(x=0,y=0)
+    
+    # LABELS 
+    
+    ## Label title ------
 
-    textBoxPath = tkinter.Text(frame,height = 5,width = 20) # TextBox Creation
+    labelPath = tkinter.Label(frame, text = "YTGUI",background=main_collor_,fg=TEXT_collor,font = myFont)
+    labelPath.place(x=220,y=50)
+    
+    ## Label with info <enetering the path> ------
+
+    labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=main_collor_,fg=TEXT_collor,font = myFont)
+    labelPath.place(x=60,y=170)
+
+    ## Label with info for the <confirm the path>
+
+    label_enterLink = tkinter.Label(frame,text="Enter here^ a YouTube Link ^", background=main_collor_,fg=TEXT_collor)
+    label_enterLink['font'] = myFont
+    label_enterLink.place(x=110,y=258)
+
+    ## canvas labels that are without background 
+    
+    #canv.create_text(280, 50, text="YTGUI", fill="white", font=('Helvetica 15 bold'))
+    #canv.create_text(230, 170, text="Enter here^ a PATH where to download:^", fill="white", font=('Helvetica 13 bold'))
+    #canv.create_text(230, 260, text="Enter here^ a YouTube Link ^", fill="white", font=('Helvetica 13 bold'))
+
+    ## Label with downloading info ---------------
+    
+    label_download = tkinter.Label(frame,text=" ", background=main_collor_,fg="#1aff1a", font = myFont).place(x=70,y=360) 
+
+    #TEXTBOXES
+    
+    ## textbox for the path ----------------------
+
+    textBoxPath = tkinter.Text(frame,height = 2,width = 39, font=('Helvetica 12 bold'),foreground="black") # TextBox Creation
     last_location = userConfig.SAVE_PATH
     textBoxPath.insert("end-1c",last_location)
-    #if len(userConfig.SAVE_PATH)>0:
-    #    auto_fill = auto_fill_SAVE_PATH
-    #    auto_fill = change_backslashes(auto_fill)
-    #    textBoxPath.insert("end-1c",auto_fill)
-    #else:
-    #    last_location = read_file("last_location.txt")
-    #    textBoxPath.insert("end-1c",last_location)
-    textBoxPath.configure(background="#FFFFFF")
-    textBoxPath.pack()
+    SAVE_PATH = last_location
+    debuglog("main(): SAVE_PATH = "+SAVE_PATH)
+    textBoxPath.configure(background="white")
+    #frame.event_add("<<Mouse_LeftClick_Action>>", "<Button>") # my own event 
+   #textBoxPath.bind("<<Mouse_LeftClick_Action>>",buttonActionConfirmThePath)
+    textBoxPath.bind("<KeyRelease>",eventAction_confirmThePath)
+    textBoxPath.place(x=60, y=120)
 
-    # Label with info <enetering the path> ------
+    ## Textbox for the link ----------------------
 
-    labelPath = tkinter.Label(frame, text = "Enter here^ a PATH where to download:^",background=main_collor,fg=TEXT_collor)
-    labelPath['font'] = myFont
-    labelPath.pack()
-
-    # Button to confirm tha path ----------------
-
-    ButtonPathConfirm = tkinter.Button(frame,text = "confirm the PATH", command = buttonActionConfirmThePath)
-    ButtonPathConfirm['font'] = myFont
-    ButtonPathConfirm.pack()
-
-    # Textbox for the link ----------------------
-
-    textBoxDownloadLink = tkinter.Text(frame,height = 5,width = 20)  
-    #if len(auto_fill_link_field)>0:
-    #   textBoxDownloadLink.insert("end-1c",auto_fill_link_field)
+    textBoxDownloadLink = tkinter.Text(frame,height = 2,width = 39,font=('Helvetica 12 bold'))  
     textBoxDownloadLink.insert("end-1c",userConfig.link)
-    textBoxDownloadLink.pack()
+    textBoxDownloadLink.place(x=60,y=210)
  
-    # Label with info for the <confirm the path>
+    # Buttons 
+    
+    ## Browse Button -----------------------------
 
-    label_enterLink = tkinter.Label(frame,text="Enter here a YouTube Link ^", background=main_collor,fg=TEXT_collor)
-    label_enterLink['font'] = myFont
-    label_enterLink.pack()
-
-    # Button to confirm download ----------------
+    browseBtn = tkinter.Button(frame,text = "Browse", command = browse, font = myFont).place(x=410,y=120)
+ 
+    ## Button to confirm download ----------------
 
     ButtonDownload = tkinter.Button(frame,text = "confirm link and download", command = thread_download ) #buttonActionDownload
-    ButtonDownload.pack()
+    
+    #ButtonDownload.pack()
+    ButtonDownload.place(x=120,y=290)
     ButtonDownload["state"] = "disabled"  # button is disabled at start 
     ButtonDownload['font'] = myFont
-    
+    validSavePath(last_location)    # enable dowload_button if there is already exists a path
     # Combobox to choose an option of download---
+
+    # COMBOBOX
 
     downloadType = DownloadType
     Combobox=ttk.Combobox(frame,values=downloadType.downloadTypes,width=30,state = "readonly",font=myFont)
     try:
         currentComboboxID = str(userConfig.last_combobox_state)
-        Combobox.current(currentComboboxID) # show first option 
+        Combobox.current(currentComboboxID) # show last watched option 
     except:
         log("main(): incorrect comobox current state,\" "+ userConfig.last_combobox_state +" \" problem has been fixed automaticallly") 
         Combobox.current(0) # show first option
     frame.option_add('*TCombobox*Listbox.font', myFont) # apply font to combobox list
-    Combobox.bind("<<ComboboxSelected>>", combobox_saveStateOnClick) # event listener
-    Combobox.pack()
+    Combobox.bind("<<ComboboxSelected>>", event_combobox_saveStateOnClick) # event listener
+    Combobox.place(x=70,y=330)
 
-    # Label with downloading info ---------------
-
-    label_download = tkinter.Label(frame,text=" ", background=main_collor,fg="#1aff1a")
-    label_download['font'] = myFont
-    label_download.pack()    
-
+    # CHECKBOXES
+    
     # checkBoxes to make logs -------------------------
      
     var1 = tkinter.IntVar() # if not this, the 2 checkboxes would be touched in 1 click (graphically)
@@ -1217,49 +1371,49 @@ def main():
                              variable=var1,
                              onvalue=1,
                              offvalue=0 ,
-                             background=main_collor,
+                             background=main_collor_,
                              fg=TEXT_collor,
                              selectcolor="blue",
                              command=lambda:checkBoxAction_makeLogs(str(var1.get())) )
     c1['font'] = myFont
     if userConfig.allow_logs == True:
         c1.select()
-        global make_logs
-        make_logs = True
-    c1.pack()
+        #global make_logs
+        Debug.make_logs = True
+    #c1.pack()
+    c1.place(x=70,y=410)
     c2 = tkinter.Checkbutton(frame, 
                              text='add debug details to logs',
                              variable=var2, 
                              onvalue=1,
                              offvalue=0, 
-                             background=main_collor,
+                             background=main_collor_,
                              fg=TEXT_collor,
                              selectcolor="blue",
                              command=lambda:checkBoxAction_makeDetailedLogs(str(var2.get())))
     c2['font'] = myFont
     if userConfig.returnDetailsInLogs() == True:
         c2.select()
-        global append_debug_details_to_logs
-        append_debug_details_to_logs = True
-    c2.pack()
+        #global Debug.append_debug_details_to_logs
+        Debug.append_debug_details_to_logs = True
+    #c2.pack()
+    c2.place(x=70,y=440)
     c3 = tkinter.Checkbutton(frame, 
                          text='show debug details in cmd',
                          variable=var3, 
                          onvalue=1,
                          offvalue=0, 
-                         background=main_collor,
+                         background=main_collor_,
                          fg=TEXT_collor,
                          selectcolor="blue",
                          command=lambda:checkBoxAction_cmdDetails(str(var3.get())))
     c3['font'] = myFont
     if userConfig.details_in_cmd == True:
         c3.select()
-        global show_cmd_details
-        show_cmd_details = True
-    c3.pack()
-
-    frame.resizable(width=False, height=False)
-
+        #global Debug.show_cmd_details
+        Debug.show_cmd_details = True
+    c3.place(x=70, y=470)  #c3.pack()
+    
     frame.mainloop()
     
     #if downloading_thread.is_alive():
@@ -1267,7 +1421,7 @@ def main():
     
     return 0
     
-main()
+#main()
 
 
 

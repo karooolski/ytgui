@@ -1,1 +1,1 @@
-python ytgui.py
+python __main__.py
