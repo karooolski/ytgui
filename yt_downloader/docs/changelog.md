@@ -1,8 +1,7 @@
 
 # 1.14.0
 
-
-![alt text](https://github.com/karooolski/ytgui/blob/main/yt_downloader/view_2024_02_29.PNG?raw=true)
+![alt text](https://github.com/karooolski/ytgui/blob/main/yt_downloader/img/view_2024_02_29.PNG?raw=true)
 
 ## Added: 
 - Album image changer in separated GUI
