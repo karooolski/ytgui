@@ -1,3 +1,11 @@
 # General 
 Download signle video / audio , or the whole playlist from youtube using python script
-![alt text](https://github.com/karooolski/ytgui/blob/main/yt_downloader/view_2023_03_04.JPG?raw=true)
+
+
+# 1.14.0
+
+![alt text](https://github.com/karooolski/ytgui/blob/main/yt_downloader/view_2024_02_29.PNG?raw=true)
+
+
+
+

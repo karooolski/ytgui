@@ -1,2 +1,0 @@
-import ytgui
-ytgui.main()

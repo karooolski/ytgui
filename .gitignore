@@ -68,3 +68,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+*.xml
+yt_downloader/.idea/pythonProject.iml
