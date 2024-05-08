@@ -42,12 +42,15 @@ def is_internet_connection(host='http://google.com'):
 # True - file exists
 # False - file not exists, can be downloaded
 def fileExsists(SAVE_PATH: str, yt_title: str, link_to_video: str,files_links,files_names):
+
     debuglog("[fileExsists] ---fileExsists(): start() ")
     name_exists = False
     link_exists = False
+
     if(len(Files_info.files_names) == 0 and len(Files_info.files_links)==0):
-        log("[.Utils]: [fileExsists]: function see files names and files links as zeros")
+        debuglog("[.Utils]: [fileExsists]: function see files names and files links as zeros, you propably downloading content to folder with no mp3 files.")
         return False
+
     try:
         debuglog("[fileExsists] comparing files links with existing link")
         # compare URL`s` from .mp3 files metadata from SAVE_PATH to video link that can be downloaded
@@ -60,25 +63,33 @@ def fileExsists(SAVE_PATH: str, yt_title: str, link_to_video: str,files_links,fi
         debuglog("[fileExsists] comparing filenames")
         # checking if in SAVE_PATH exists file with the same filename as yt_title
         file_name = " "
+
         for i in range(len(Files_info.files_names)):
-            if This_Two_Are_The_Same(Files_info.files_names[i], yt_title) or Files_info.files_names[
-                i] == yt_title:  # files_names[i] == link_to_video:
+
+            condition_exists1 = This_Two_Are_The_Same(Files_info.files_names[i], yt_title)
+            condition_exists2 = Files_info.files_names[i] == yt_title
+
+            if condition_exists1 or condition_exists2:  # files_names[i] == link_to_video:
                 file_name = Files_info.files_names[i]
                 debuglog("[fileExsists] file exists:(by tilte) for \"" + yt_title + "\"")
                 name_exists = True
                 break
+
         # Verdict:
         if name_exists and link_exists:
             info = "[fileExsists] ------File Exists------(by name and link)"
             print(bcolors.WARNING + info + bcolors.ENDC)
             debuglog(info)
             return True
+
         elif not name_exists and link_exists:  # f.ex. renamed arlier .mp3 files witch had the same name as others
             debuglog("[fileExsists] ------File Exists------(by link only)")
             return True
+
         elif not name_exists and not link_exists:
             debuglog("[fileExsists]------File NOT Exists------(at all)")
             return False
+
         # next attempt:
         # there can can be a video with the same title but other content -> changing tittle to <title><date>:
         elif name_exists and not link_exists and not file_name.__contains__(".mp4"):
@@ -86,10 +97,13 @@ def fileExsists(SAVE_PATH: str, yt_title: str, link_to_video: str,files_links,fi
             try:
                 type = " "
                 debuglog("[fileExsists] filename: " + str(file_name))
+
                 if file_name.__contains__(".mp4"):
                     type = ".mp4"
+
                 elif file_name.__contains__(".mp3"):
                     type = ".mp3"
+
                 newname = str(str(file_name[:-3]) + " " + time_now_clean() + str(type))
                 log("[fileExsists] newname: " + newname)
                 #log(bcolors.WARNING +"[fileExsists] fileExsists(): name_exists and link not exists: renaming file"+ bcolors.ENDC)
