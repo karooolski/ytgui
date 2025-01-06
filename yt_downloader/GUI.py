@@ -118,13 +118,17 @@ def eventAction_confirmThePath(features):
     except:
         errorLog("Error: eventAction_confirmThePath()")
 
-def eventAction_SaveLink(features):
+# this function is used as event,
+# when user changes text input this function is used.
+def textBoxTextChanged_SaveLink(guiObjects):
     try:
-        link = features.textBoxDownloadLink.get(1.0, "end-1c")
+        link = guiObjects.textBoxDownloadLink.get(1.0, "end-1c")
         userConfig.link = link
         userConfig.saveConfiguration("userConfig", userConfig)
     except:
         errorLog(f"[{FILENAME}]: [eventAction_SaveLink]: , some error occured")
+
+
 # combobox will always save its state when you just choose ann option
 def event_combobox_saveStateOnClick(event):
     global chosen_plan
@@ -132,7 +136,8 @@ def event_combobox_saveStateOnClick(event):
         combobox_option = event.widget.get()
         chosen_plan = combobox_option
         combobox_index = 0
-        for i in range(len(DownloadType.downloadTypes)):  # getting current combobox id
+        optionsCount = len(DownloadType.downloadTypes)
+        for i in range(optionsCount):  # getting current combobox id
             if DownloadType.downloadTypes[
                 i] == combobox_option:  # interestingly there is no built-in function in tkinter
                 break  # to do this for know,
@@ -282,7 +287,7 @@ def start_gui():
     # userConfig = UserConfig()
     # userConfig = userConfig.loadConfiguration("userConfig")
     print(time_now())
-    log("GUI start at " + time_now() + "\n")
+    log("[GUI.py] -> start_gui(): GUI start at " + time_now() + "\n")
 
     # Top level window -------------------------
 
@@ -372,7 +377,7 @@ def start_gui():
     ## Textbox for the link ----------------------
 
     textBoxDownloadLink = gui_objects.CreateTextBoxDownloadLink(frame)
-    textBoxDownloadLink.bind("<KeyRelease>", lambda x: eventAction_SaveLink(gui_objects))
+    textBoxDownloadLink.bind("<KeyRelease>", lambda x: textBoxTextChanged_SaveLink(gui_objects))
     textBoxDownloadLink.place(x=60, y=210)
 
     # Buttons

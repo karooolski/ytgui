@@ -241,6 +241,36 @@ def download_audio(_yt_: YouTube, save_path: str):
         errorLog("[download_audio]: download video (function) error!")
 
 
+def tryPrintPlaylistInfo(link):
+    func_title = '[Dondload.py -> tryPrintPlaylistInfo()]: '
+    print(f"{func_title}:Playlist video urls: ")
+    try:
+        playlist = Playlist(link)
+        playlist_title = playlist.title
+        count_ = 1
+        total = str(playlist.length)
+
+        urls = playlist.video_urls
+        for url in urls:
+            print(f"{func_title} {count_}/{total}: {url}")
+            count_ += 1
+
+        # for video in playlist.videos:
+        #     tmp_link = video.watch_url
+        #     #yt = YouTube(tmp_link, on_progress_callback=on_progress)
+        #     title = ""
+        #     try:
+        #         title = video.title
+        #     except:
+        #         title = "<can`t read title>"
+        #     print(f"{func_title}: {count_}/{total}: link:{tmp_link}, title:{title} playlist_title:{playlist_title}")
+        #     count_ += 1
+        return True
+    except:
+        errorLog(func_title + "can`t print playlist info")
+        return False
+
+
 def try_get_title(yt : YouTube):
     title = "None"
     try:
@@ -381,13 +411,15 @@ def alternative_download_mp3_2(link, SAVE_PATH, mode, count_=0, total=1, playlis
         return_code = False
         if not one_more_time:  # if it is one more time try to download and it is also failed, then do not go there (download) again
             errorLog(func_title + " Function error with downloading " + link)
-            warning("[.Download]: [alternative_download_mp3]: another try to download a file")
+            warning("[Download.py]: -> alternative_download_mp3(): another try to download a file")
             one_more_time_download = alternative_download_mp3(link, SAVE_PATH, mode, count_, total, playlist_title,
                                                               one_more_time=True)
             if one_more_time_download == True:
                 return_code = True
             else:
-                errorLog("[.Download]: [alternative_download_mp3]: another try to download a file failed")
+                errorLog("[Download.py] -> alternative_download_mp3(): another try to download a file failed")
+                debuglog("[.Download]: [alternative_download_mp3]: Try download album image for future use")
+                yt_get_thumbnail(link,SAVE_PATH)
         return return_code
 
 def alternative_download_audio_mp3_playlist(link,
@@ -951,7 +983,7 @@ def startDownloading(features, chosen_plan, link, SAVE_PATH):
     # label_download.configure(text=" ")
     log("Downloading endend " + time_now() + "\n---------------------------------------")
     # downloading_thread.join()
-    make_log(Log_list.logs)
+    # make_log(Log_list.logs)
     #clearLists()  # clear lists after downlaod everything # cos nie dziala
     #features.buttonBreakDownload["state"] = "disabled"
     features.hideOnDownloadLabel()
