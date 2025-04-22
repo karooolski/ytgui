@@ -251,7 +251,6 @@ def tryPrintPlaylistInfo(link):
         total = str(playlist.length)
 
         urls = playlist.video_urls
-        
         for url in urls:
             print(f"{func_title} {count_}/{total}: {url}")
             count_ += 1
