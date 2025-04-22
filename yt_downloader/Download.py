@@ -112,7 +112,7 @@ def ytdl_download_mp3_audio_with_thumbnail(link: str, SAVE_PATH: str):
         log(f"{func_title} Function started " + time_now() + "\n---------------------------------------")
         if validLink(link, "single_video") == False:
             return
-        alternative_download_mp3_2(link, SAVE_PATH, "single_video", count_=0, total=1, playlist_title="None")
+        alternative_download_mp3_2(link, SAVE_PATH, "single_video", count_=0, total=1, playlist_title="MUZA 3")
     except:
         errorLog(f"{func_title}Function error")
 
@@ -876,8 +876,11 @@ def set_meta_data(yt: YouTube, SAVE_PATH: str, file_path: str, link: str, mode: 
         # tag.audio_source_url  cant be seen in windows10 property, but inside file : yes
         tag._setEncodedBy("ytgui_v" + GUI_VARS.version)
         debuglog("[set_meta_data]: setting tag to a file")
-        if mode == "playlist":
-            tag.album = playlist_title
+        
+        #if mode == "playlist":
+        
+        tag.album = playlist_title
+        
         try:
             tag.images.set(ImageFrame.FRONT_COVER, open(os.path.join(SAVE_PATH, 'thumbnail.jpg'), 'rb').read(),
                            'image/jpeg')
