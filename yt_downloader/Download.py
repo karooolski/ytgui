@@ -241,6 +241,37 @@ def download_audio(_yt_: YouTube, save_path: str):
         errorLog("[download_audio]: download video (function) error!")
 
 
+def tryPrintPlaylistInfo(link):
+    func_title = '[Dondload.py -> tryPrintPlaylistInfo()]: '
+    print(f"{func_title}:Playlist video urls: ")
+    try:
+        playlist = Playlist(link)
+        playlist_title = playlist.title
+        count_ = 1
+        total = str(playlist.length)
+
+        urls = playlist.video_urls
+        
+        for url in urls:
+            print(f"{func_title} {count_}/{total}: {url}")
+            count_ += 1
+
+        # for video in playlist.videos:
+        #     tmp_link = video.watch_url
+        #     #yt = YouTube(tmp_link, on_progress_callback=on_progress)
+        #     title = ""
+        #     try:
+        #         title = video.title
+        #     except:
+        #         title = "<can`t read title>"
+        #     print(f"{func_title}: {count_}/{total}: link:{tmp_link}, title:{title} playlist_title:{playlist_title}")
+        #     count_ += 1
+        return True
+    except:
+        errorLog(func_title + "can`t print playlist info")
+        return False
+
+
 def try_get_title(yt : YouTube):
     title = "None"
     try:
@@ -381,13 +412,15 @@ def alternative_download_mp3_2(link, SAVE_PATH, mode, count_=0, total=1, playlis
         return_code = False
         if not one_more_time:  # if it is one more time try to download and it is also failed, then do not go there (download) again
             errorLog(func_title + " Function error with downloading " + link)
-            warning("[.Download]: [alternative_download_mp3]: another try to download a file")
+            warning("[Download.py]: -> alternative_download_mp3(): another try to download a file")
             one_more_time_download = alternative_download_mp3(link, SAVE_PATH, mode, count_, total, playlist_title,
                                                               one_more_time=True)
             if one_more_time_download == True:
                 return_code = True
             else:
-                errorLog("[.Download]: [alternative_download_mp3]: another try to download a file failed")
+                errorLog("[Download.py] -> alternative_download_mp3(): another try to download a file failed")
+                debuglog("[.Download]: [alternative_download_mp3]: Try download album image for future use")
+                yt_get_thumbnail(link,SAVE_PATH)
         return return_code
 
 def alternative_download_audio_mp3_playlist(link,
@@ -782,10 +815,19 @@ def convert_to_mp3_with_metadatax2(filepath, filename, NotAddMp4 = False):
 
 
 def yt_get_thumbnail(link, SAVE_PATH):
+    func_title = "[yt_get_thumbnail]"
+    print(
+        f"(\nlink: {link}\nSAVE_PATH: {SAVE_PATH}\n)\n"
+    )
     try:
+        debuglog(f"{func_title} wczutyje link")
+        
         yt = YouTube(link)
-        thumbnail_url = yt.thumbnail_url
-        print(thumbnail_url)
+        video_id = yt.video_id
+        thumbnail_url = f"https://i3.ytimg.com/vi/{video_id}/maxresdefault.jpg"
+        
+        debuglog(f"{func_title} url: {thumbnail_url}")
+        
         # thumbnail_url  = 'https://img.youtube.com/vi/[{vid_id}]/maxresdefault.jpg'
         image = requests.get(thumbnail_url)
         print("got  image")
@@ -794,8 +836,8 @@ def yt_get_thumbnail(link, SAVE_PATH):
             f.write(image.content)
             f.close()
         return True
-    except:
-        print("[yt_get_thumbnail] error")
+    except Exception as ex:
+        errorLog(f"[yt_get_thumbnail] error: {str(ex)}")
         return False
 
 
@@ -803,13 +845,21 @@ def yt_get_thumbnail(link, SAVE_PATH):
 def set_meta_data(yt: YouTube, SAVE_PATH: str, file_path: str, link: str, mode: str, playlist_title: str,
                   video_title=" ", video_author=" "):
     # mode : "playlist" during dowloading from playlist or other if downloading single file
-    debuglog("[set_meta_data]: got: \n" + SAVE_PATH + "\n" + file_path + "\n" + link)
+    debuglog(f"[set_meta_data]: got: \n(\n {SAVE_PATH} + \n + {file_path}  \n + {link}\n)\n")
     try:
-        yt_image = requests.get(yt.thumbnail_url)  # download video thumbnail
-        with open(os.path.join(SAVE_PATH, "thumbnail.jpg"), 'wb') as f:
-            f.write(yt_image.content)
-            f.close()
+        # yt_image = requests.get(yt.thumbnail_url)  # download video thumbnail
+        
+        # with open(os.path.join(SAVE_PATH, "thumbnail.jpg"), 'wb') as f:
+        #     f.write(yt_image.content)
+        #     f.close()
+        
+        downloaded_thumbnail = yt_get_thumbnail(link,SAVE_PATH)
+        
+        if not downloaded_thumbnail:
+            return
+        
         audiofile = eyed3.load(file_path)  # convert audio meta data
+        
         if not audiofile.tag:
             audiofile.initTag()
         debuglog("[set_meta_data]: creating tag")
@@ -951,7 +1001,7 @@ def startDownloading(features, chosen_plan, link, SAVE_PATH):
     # label_download.configure(text=" ")
     log("Downloading endend " + time_now() + "\n---------------------------------------")
     # downloading_thread.join()
-    make_log(Log_list.logs)
+    # make_log(Log_list.logs)
     #clearLists()  # clear lists after downlaod everything # cos nie dziala
     #features.buttonBreakDownload["state"] = "disabled"
     features.hideOnDownloadLabel()

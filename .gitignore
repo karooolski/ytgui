@@ -70,3 +70,4 @@ Mkfile.old
 dkms.conf
 *.xml
 yt_downloader/.idea/pythonProject.iml
+yt_downloader/maintest.py

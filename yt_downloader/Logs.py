@@ -15,13 +15,18 @@ def clear_logs():
 # reuturns file name for a log file (current time as a filename)
 def log_filename():
     now = datetime.now()
+    date_time = now.strftime("%Y %m %d")
+    return date_time
+
+def log_time():
+    now = datetime.now()
     date_time = now.strftime("%Y %m %d, %H %M %S")
     return date_time
 
 
 def warning(infos : str):
     print(bcolors.WARNING + "[WARNING] " + infos + bcolors.ENDC)
-    log(infos, hidden=True)
+    log("[Warning] "+infos, hidden=True)
 
 # OKCYAN
 def info(infos: str):
@@ -32,42 +37,46 @@ def info(infos: str):
         print(bcolors.WARNING + "ERORR: log(): adding to logs list error" + bcolors.ENDC)
 
 
-def log(infos: str, hidden=False):
+def log(message: str, hidden=False):
     if hidden == False:
-        print(infos)  # for user during downloading
+        print(f"[Log] {message}")  # for user during downloading
     try:
-        Log_list.logs.append(remove_non_ascii(infos) + "\n")
+        #Log_list.logs.append(remove_non_ascii(message) + "\n")
+        make_log(remove_non_ascii(message), "[Log]")
     except:
         errorLog("log(): adding to logs list error")
         # print(bcolors.WARNING + "ERORR:  + bcolors.ENDC)
 
 
-def errorLog(infos: str):
-    print(bcolors.WARNING + "[Error] " + infos + bcolors.ENDC)  # for user during downloading
+def errorLog(message: str):
+    print(bcolors.WARNING + "[Error] " + message + bcolors.ENDC)  # for user during downloading
     try:
-        Log_list.logs.append(remove_non_ascii("[Error] " + infos) + "\n")
+        #Log_list.logs.append(remove_non_ascii("[Error] " + infos) + "\n")
+        make_log(message, "[Error]")
     except:
         print(bcolors.WARNING + "ERORR: log(): adding to logs list error" + bcolors.ENDC)
 
 
 # dont show log info during downloading in cmd, but store it in log file
-def hiddenlog(infos: str):
+def hiddenlog(message: str):
     try:
-        Log_list.logs.append(remove_non_ascii(infos) + "\n")
+        #Log_list.logs.append(remove_non_ascii(infos) + "\n")
+        make_log(message, "[HLog]")
     except:
         print(bcolors.WARNING + "ERORR: hiddenlog(): adding to logs list error" + bcolors.ENDC)
 
 
 # for additional log infos
-def debuglog(infos: str):
+def debuglog(message: str):
     append = Debug.append_debug_details_to_logs
     show = Debug.show_cmd_details
     if (append and show):
-        log("[debug]: " + infos)
+        print(f"[Debug] {message}")
+        log(message)
     elif (append and not show):
-        hiddenlog("[debug]: " + infos)
+        hiddenlog("[Debug]: " + message)
     elif (show and not append):
-        print("[debug]: " + infos)
+        print("[Debug]: " + message)
 
 
 # (debug) print additional information in cmd
@@ -78,17 +87,17 @@ def detail(*infos):
             print(info)
 
 
-def make_log(logs: list):
+def make_log(message : str, log_type : str):
     if Debug.make_logs == False:
         return
+    time = log_time()
     try:
         logfilename = log_filename()
-        file = open("logs/" + logfilename + ".txt", "w")
-        for i in range(len(logs)):
-            file.write(str(logs[i]))
+        file = open("logs/" + logfilename + ".txt", "a")
+        file.write(f"{time} {log_type} {message} \n")
         file.close()
     except FileNotFoundError:
         os.makedirs("logs")
-        make_log(logs)
+        make_log(message,log_type)
     except:
         errorLog("make_log(): some problem occured!")
