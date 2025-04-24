@@ -14,6 +14,9 @@ from eyed3.id3.frames import ImageFrame
 # from eyed3.id3 import tag
 # import eyed3.id3 as id3
 
+import yt_dlp
+
+
 import requests
 
 import Debug_Options
@@ -111,10 +114,12 @@ def ytdl_download_mp3_audio_with_thumbnail(link: str, SAVE_PATH: str):
     try:
         log(f"{func_title} Function started " + time_now() + "\n---------------------------------------")
         if validLink(link, "single_video") == False:
-            return
-        alternative_download_mp3_2(link, SAVE_PATH, "single_video", count_=0, total=1, playlist_title="MUZA 3")
+            return False
+        download_result = alternative_download_mp3_2(link, SAVE_PATH, "single_video", count_=0, total=1, playlist_title="MUZA 3")
+        return download_result # True / False
     except:
         errorLog(f"{func_title}Function error")
+        return False
 
 
 def download_mp3_audio_with_thumbnail(link: str, SAVE_PATH: str):
@@ -279,6 +284,15 @@ def try_get_title(yt : YouTube):
         pass
     return title
 
+
+
+
+# --------------------------------
+# Download MP3  
+# --------------------------------
+
+
+
 # mode: single_video, playlist
 def alternative_download_mp3(link, SAVE_PATH, mode, count_=0, total=1, playlist_title="None", one_more_time=False):
     yt = YouTube(link)
@@ -347,7 +361,7 @@ def alternative_download_mp3(link, SAVE_PATH, mode, count_=0, total=1, playlist_
         return return_code
 
 # 2023 09 23 01 28
-def alternative_download_mp3_2(link, SAVE_PATH, mode, count_=0, total=1, playlist_title="None", one_more_time=False):
+def alternative_download_mp3_2(link, SAVE_PATH, mode, count_=0, total=1, playlist_title="None", one_more_time=False, download_only_mp4=False):
     func_title = "[alternative_download_mp3_2]: "
     try:
         debuglog(func_title + "Start working")
@@ -390,6 +404,9 @@ def alternative_download_mp3_2(link, SAVE_PATH, mode, count_=0, total=1, playlis
             filepath = SAVE_PATH + '/' + title + '.' + _format_
             ydl.encode('')
 
+            if download_only_mp4 == True:
+                return True
+        
             convering_result = convert_to_mp3_with_metadatax2(SAVE_PATH, title)
 
             if convering_result is False:
@@ -444,6 +461,19 @@ def alternative_download_audio_mp3_playlist(link,
     except:
         errorLog(func_name + "can`t download playlist also in alternative way")
         return False
+
+# new 2025-04-23 based by yt-dlp
+def download_video2(link, SAVE_PATH):
+    youtube_dl_options = {
+        'outtmpl': SAVE_PATH + '/%(title)s.%(ext)s',
+        'format': 'best',
+        'postprocessors': [{
+            'key': 'FFmpegVideoConvertor',
+            'preferedformat': 'mp4',
+        }]
+    }
+    with yt_dlp.YoutubeDL(youtube_dl_options) as ydl:
+        return ydl.download([link])
 
 
 # inner function

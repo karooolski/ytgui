@@ -1,7 +1,7 @@
 class Debug:
-    make_logs = False
+    make_logs = True
     show_cmd_details = True
-    append_debug_details_to_logs = False
+    append_debug_details_to_logs = True
     stop_downloading = False
     break_downloading = False
     run_gui = True
